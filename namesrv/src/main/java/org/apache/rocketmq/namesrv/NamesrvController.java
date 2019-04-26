@@ -63,8 +63,17 @@ public class NamesrvController {
     public NamesrvController(NamesrvConfig namesrvConfig, NettyServerConfig nettyServerConfig) {
         this.namesrvConfig = namesrvConfig;
         this.nettyServerConfig = nettyServerConfig;
+        /**
+         * KV配置管理
+         */
         this.kvConfigManager = new KVConfigManager(this);
+        /**
+         * 路由信息管理
+         */
         this.routeInfoManager = new RouteInfoManager();
+        /**
+         * Broker 连接事件处理服务
+         */
         this.brokerHousekeepingService = new BrokerHousekeepingService(this);
         this.configuration = new Configuration(
             log,
@@ -75,6 +84,9 @@ public class NamesrvController {
 
     public boolean initialize() {
 
+        /**
+         * 将KVpath下面的json文件加载到内存中
+         */
         this.kvConfigManager.load();
 
         this.remotingServer = new NettyRemotingServer(this.nettyServerConfig, this.brokerHousekeepingService);
