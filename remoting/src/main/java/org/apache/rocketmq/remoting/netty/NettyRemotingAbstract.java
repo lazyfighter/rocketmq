@@ -77,6 +77,9 @@ public abstract class NettyRemotingAbstract {
     /**
      * This container holds all processors per request code, aka, for each incoming request, we may look up the
      * responding processor in this map to handle the request.
+     *
+     *
+     * 包含了命令处理器
      */
     protected final HashMap<Integer/* request code */, Pair<NettyRequestProcessor, ExecutorService>> processorTable =
         new HashMap<Integer, Pair<NettyRequestProcessor, ExecutorService>>(64);
@@ -394,6 +397,17 @@ public abstract class NettyRemotingAbstract {
         }
     }
 
+
+    /**
+     * 远程调用
+     * @param channel 连接
+     * @param request   请求
+     * @param timeoutMillis 超时还是件
+     * @return
+     * @throws InterruptedException
+     * @throws RemotingSendRequestException
+     * @throws RemotingTimeoutException
+     */
     public RemotingCommand invokeSyncImpl(final Channel channel, final RemotingCommand request,
         final long timeoutMillis)
         throws InterruptedException, RemotingSendRequestException, RemotingTimeoutException {
@@ -404,6 +418,8 @@ public abstract class NettyRemotingAbstract {
             this.responseTable.put(opaque, responseFuture);
             final SocketAddress addr = channel.remoteAddress();
             channel.writeAndFlush(request).addListener(new ChannelFutureListener() {
+
+                // TODO 这个listen什么时间调用的
                 @Override
                 public void operationComplete(ChannelFuture f) throws Exception {
                     if (f.isSuccess()) {
@@ -421,6 +437,8 @@ public abstract class NettyRemotingAbstract {
             });
 
             RemotingCommand responseCommand = responseFuture.waitResponse(timeoutMillis);
+
+            // 如果为null 说明等待返回结果超时，抛出异常
             if (null == responseCommand) {
                 if (responseFuture.isSendRequestOK()) {
                     throw new RemotingTimeoutException(RemotingHelper.parseSocketAddressAddr(addr), timeoutMillis,

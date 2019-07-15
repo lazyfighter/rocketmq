@@ -21,10 +21,10 @@ public enum PutMessageStatus {
     FLUSH_DISK_TIMEOUT,
     FLUSH_SLAVE_TIMEOUT,
     SLAVE_NOT_AVAILABLE,
-    SERVICE_NOT_AVAILABLE,
-    CREATE_MAPEDFILE_FAILED,
-    MESSAGE_ILLEGAL,
-    PROPERTIES_SIZE_EXCEEDED,
+    SERVICE_NOT_AVAILABLE, // broker不可以写入，shutdown状态、slave角色、不可以写入状态
+    CREATE_MAPEDFILE_FAILED, // 创建Mapped文件失败 一般为磁盘大小不够或者权限不足
+    MESSAGE_ILLEGAL, // topic长度过大
+    PROPERTIES_SIZE_EXCEEDED, // properties长度过大
     OS_PAGECACHE_BUSY,
     UNKNOWN_ERROR,
 }

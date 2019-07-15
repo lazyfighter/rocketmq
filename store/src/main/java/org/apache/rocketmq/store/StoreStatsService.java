@@ -48,8 +48,15 @@ public class StoreStatsService extends ServiceThread {
     private final ConcurrentMap<String, AtomicLong> putMessageTopicSizeTotal =
         new ConcurrentHashMap<String, AtomicLong>(128);
 
+    /**
+     * 成功拉取到消息次数
+     */
     private final AtomicLong getMessageTimesTotalFound = new AtomicLong(0);
     private final AtomicLong getMessageTransferedMsgCount = new AtomicLong(0);
+
+    /**
+     * 没有拉取到消息次数
+     */
     private final AtomicLong getMessageTimesTotalMiss = new AtomicLong(0);
     private final LinkedList<CallSnapshot> putTimesList = new LinkedList<CallSnapshot>();
 
@@ -59,6 +66,10 @@ public class StoreStatsService extends ServiceThread {
     private volatile AtomicLong[] putMessageDistributeTime;
     private long messageStoreBootTimestamp = System.currentTimeMillis();
     private volatile long putMessageEntireTimeMax = 0;
+
+    /**
+     * 记录消息读取的最大时间
+     */
     private volatile long getMessageEntireTimeMax = 0;
     // for putMessageEntireTimeMax
     private ReentrantLock lockPut = new ReentrantLock();

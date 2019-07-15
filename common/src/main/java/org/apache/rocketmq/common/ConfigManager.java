@@ -47,6 +47,10 @@ public abstract class ConfigManager {
 
     public abstract String configFilePath();
 
+    /**
+     * 如果正式文件读取失败或者内容为空，则读取bak文件源文件加.bak后缀
+     * @return
+     */
     private boolean loadBak() {
         String fileName = null;
         try {

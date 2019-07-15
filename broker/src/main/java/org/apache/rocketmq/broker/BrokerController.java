@@ -174,6 +174,9 @@ public class BrokerController {
         this.nettyServerConfig = nettyServerConfig;
         this.nettyClientConfig = nettyClientConfig;
         this.messageStoreConfig = messageStoreConfig;
+
+
+
         this.consumerOffsetManager = new ConsumerOffsetManager(this);
         this.topicConfigManager = new TopicConfigManager(this);
         this.pullMessageProcessor = new PullMessageProcessor(this);
@@ -226,11 +229,18 @@ public class BrokerController {
         return queryThreadPoolQueue;
     }
 
+    // 初始化controller
     public boolean initialize() throws CloneNotSupportedException {
+        // 将本地本地topic数据加载到内存
         boolean result = this.topicConfigManager.load();
 
+        // 将offset数据加载到内存中
         result = result && this.consumerOffsetManager.load();
+
+        // 将订阅组数据加载到内存中
         result = result && this.subscriptionGroupManager.load();
+
+        // 将过滤器数据加载到内存中
         result = result && this.consumerFilterManager.load();
 
         if (result) {
@@ -243,7 +253,7 @@ public class BrokerController {
                     ((DLedgerCommitLog)((DefaultMessageStore) messageStore).getCommitLog()).getdLedgerServer().getdLedgerLeaderElector().addRoleChangeHandler(roleChangeHandler);
                 }
                 this.brokerStats = new BrokerStats((DefaultMessageStore) this.messageStore);
-                //load plugin
+                //load plugin TODO plugin是做什么的
                 MessageStorePluginContext context = new MessageStorePluginContext(messageStoreConfig, brokerStatsManager, messageArrivingListener, brokerConfig);
                 this.messageStore = MessageStoreFactory.build(context, this.messageStore);
                 this.messageStore.getDispatcherList().addFirst(new CommitLogDispatcherCalcBitMap(this.brokerConfig, this.consumerFilterManager));
@@ -387,10 +397,14 @@ public class BrokerController {
                 }
             }, 1000 * 10, 1000 * 60, TimeUnit.MILLISECONDS);
 
+
+            // 将配置的nameServer地址传入remoteClient中
             if (this.brokerConfig.getNamesrvAddr() != null) {
                 this.brokerOuterAPI.updateNameServerAddressList(this.brokerConfig.getNamesrvAddr());
                 log.info("Set user specified name server address: {}", this.brokerConfig.getNamesrvAddr());
             } else if (this.brokerConfig.isFetchNamesrvAddrByAddressServer()) {
+
+                // 如果没有指定定时从指定的url中获取
                 this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 
                     @Override
@@ -529,6 +543,10 @@ public class BrokerController {
         }
     }
 
+
+    /**
+     * 为nettyServer注册处理器
+     */
     public void registerProcessor() {
         /**
          * SendMessageProcessor

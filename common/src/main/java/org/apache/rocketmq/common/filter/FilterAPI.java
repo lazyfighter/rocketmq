@@ -36,6 +36,14 @@ public class FilterAPI {
         return simple;
     }
 
+    /**
+     * 根据消费者、主题、规则创建订阅类
+     * @param consumerGroup  消费者组
+     * @param topic 主题
+     * @param subString 订阅过滤规则
+     * @return
+     * @throws Exception
+     */
     public static SubscriptionData buildSubscriptionData(final String consumerGroup, String topic,
         String subString) throws Exception {
         SubscriptionData subscriptionData = new SubscriptionData();
@@ -64,6 +72,15 @@ public class FilterAPI {
         return subscriptionData;
     }
 
+
+    /**
+     * 根据参数构建订阅类，此build主要用于当consumer如果每次pullMessage都会postSub的话用与构建订阅信息
+     * @param topic
+     * @param subString
+     * @param type
+     * @return
+     * @throws Exception
+     */
     public static SubscriptionData build(final String topic, final String subString,
         final String type) throws Exception {
         if (ExpressionType.TAG.equals(type) || type == null) {

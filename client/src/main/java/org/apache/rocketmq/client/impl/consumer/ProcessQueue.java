@@ -36,6 +36,9 @@ import org.apache.rocketmq.common.protocol.body.ProcessQueueInfo;
 
 /**
  * Queue consumption snapshot
+ *
+ *
+ * 待处理的消息
  */
 public class ProcessQueue {
     public final static long REBALANCE_LOCK_MAX_LIVE_TIME =
@@ -44,7 +47,16 @@ public class ProcessQueue {
     private final static long PULL_MAX_IDLE_TIME = Long.parseLong(System.getProperty("rocketmq.client.pull.pullMaxIdleTime", "120000"));
     private final InternalLogger log = ClientLogger.getLog();
     private final ReadWriteLock lockTreeMap = new ReentrantReadWriteLock();
+
+
+    /**
+     * 消息存储容器，key为消息在ConsumeQueue中的偏移量，value为消息实体
+     */
     private final TreeMap<Long, MessageExt> msgTreeMap = new TreeMap<Long, MessageExt>();
+
+    /**
+     * 消息总数
+     */
     private final AtomicLong msgCount = new AtomicLong();
     private final AtomicLong msgSize = new AtomicLong();
     private final Lock lockConsume = new ReentrantLock();
@@ -53,10 +65,28 @@ public class ProcessQueue {
      */
     private final TreeMap<Long, MessageExt> consumingMsgOrderlyTreeMap = new TreeMap<Long, MessageExt>();
     private final AtomicLong tryUnlockTimes = new AtomicLong(0);
+
+
+    /**
+     * 当前ProcessQueue中包含的最大消息偏移量
+     */
     private volatile long queueOffsetMax = 0L;
     private volatile boolean dropped = false;
+
+    /**
+     * 上一次开始消息拉取时间戳
+     */
     private volatile long lastPullTimestamp = System.currentTimeMillis();
+
+    /**
+     * 上一次消息消费时间戳
+     */
     private volatile long lastConsumeTimestamp = System.currentTimeMillis();
+
+
+    /**
+     * 当前的queue是否被丢弃
+     */
     private volatile boolean locked = false;
     private volatile long lastLockTimestamp = System.currentTimeMillis();
     private volatile boolean consuming = false;
@@ -123,6 +153,11 @@ public class ProcessQueue {
         }
     }
 
+    /**
+     * 将拉取的消息缓存到processQueue中
+     * @param msgs 拉取到的消息
+     * @return
+     */
     public boolean putMessage(final List<MessageExt> msgs) {
         boolean dispatchToConsume = false;
         try {
@@ -132,11 +167,15 @@ public class ProcessQueue {
                 for (MessageExt msg : msgs) {
                     MessageExt old = msgTreeMap.put(msg.getQueueOffset(), msg);
                     if (null == old) {
+                        // 说明为新增的消息 新增消息++
                         validMsgCnt++;
+                        // 设置offset
                         this.queueOffsetMax = msg.getQueueOffset();
+                        // 增加拉取body的大小
                         msgSize.addAndGet(msg.getBody().length);
                     }
                 }
+                // 增加新增拉取的消息的数量
                 msgCount.addAndGet(validMsgCnt);
 
                 if (!msgTreeMap.isEmpty() && !this.consuming) {
@@ -145,7 +184,11 @@ public class ProcessQueue {
                 }
 
                 if (!msgs.isEmpty()) {
+                    // 拿到最后一个消息
                     MessageExt messageExt = msgs.get(msgs.size() - 1);
+
+                    // TODO 这个属性做什么的
+
                     String property = messageExt.getProperty(MessageConst.PROPERTY_MAX_OFFSET);
                     if (property != null) {
                         long accTotal = Long.parseLong(property) - messageExt.getQueueOffset();

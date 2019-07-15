@@ -30,13 +30,23 @@ public class ClientConfig {
     private String namesrvAddr = System.getProperty(MixAll.NAMESRV_ADDR_PROPERTY, System.getenv(MixAll.NAMESRV_ADDR_ENV));
     private String clientIP = RemotingUtil.getLocalAddress();
     private String instanceName = System.getProperty("rocketmq.client.name", "DEFAULT");
+
+
+    /**
+     * 这是做啥子的
+     */
     private int clientCallbackExecutorThreads = Runtime.getRuntime().availableProcessors();
     /**
      * Pulling topic information interval from the named server
+     *
+     *
+     * 定时从nameServer更新topicRouteInfo时间，默认为30s
      */
     private int pollNameServerInterval = 1000 * 30;
     /**
      * Heartbeat interval in microseconds with message broker
+     *
+     * 定时发送心跳到broker，默认为30s
      */
     private int heartbeatBrokerInterval = 1000 * 30;
     /**
@@ -44,7 +54,14 @@ public class ClientConfig {
      */
     private int persistConsumerOffsetInterval = 1000 * 5;
     private boolean unitMode = false;
+    /**
+     * TODO 这个属性做啥子的
+     */
     private String unitName;
+
+    /**
+     * TODO 这个是做啥子的
+     */
     private boolean vipChannelEnabled = Boolean.parseBoolean(System.getProperty(SEND_MESSAGE_WITH_VIP_CHANNEL_PROPERTY, "true"));
 
     private boolean useTLS = TlsSystemConfig.tlsEnable;

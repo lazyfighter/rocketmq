@@ -67,6 +67,14 @@ public class ConsumerManageProcessor implements NettyRequestProcessor {
         return false;
     }
 
+
+    /**
+     * 根据消费者组信息获取所有的消费者id
+     * @param ctx
+     * @param request
+     * @return
+     * @throws RemotingCommandException
+     */
     public RemotingCommand getConsumerListByGroup(ChannelHandlerContext ctx, RemotingCommand request)
         throws RemotingCommandException {
         final RemotingCommand response =

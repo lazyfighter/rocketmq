@@ -40,6 +40,13 @@ public abstract class ReferenceResource {
         return this.available;
     }
 
+    /**
+     * 此处需要注意，
+     * 第一次调用shutdown ，将状态置为shutdown同时记录时间
+     * 第二次调用的时候，状态已经是shutdown ，如果ref > 0 同时shutdown时间超过了限制
+     * 直接将ref设置为负数
+     * @param intervalForcibly
+     */
     public void shutdown(final long intervalForcibly) {
         if (this.available) {
             this.available = false;

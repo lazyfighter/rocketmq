@@ -156,11 +156,19 @@ public class ConsumerOffsetManager extends ConfigManager {
         return this.encode(false);
     }
 
+    /**
+     * 默认为/User/liping/store/config/consumerOffset.json
+     * @return
+     */
     @Override
     public String configFilePath() {
         return BrokerPathConfigHelper.getConsumerOffsetPath(this.brokerController.getMessageStoreConfig().getStorePathRootDir());
     }
 
+    /**
+     * 将json文件中的内容缓存到内存中
+     * @param jsonString
+     */
     @Override
     public void decode(String jsonString) {
         if (jsonString != null) {

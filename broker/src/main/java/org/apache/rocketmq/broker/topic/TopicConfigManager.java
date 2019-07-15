@@ -58,6 +58,7 @@ public class TopicConfigManager extends ConfigManager {
         this.brokerController = brokerController;
         {
             // MixAll.SELF_TEST_TOPIC
+            // 设置系统测试Topic
             String topic = MixAll.SELF_TEST_TOPIC;
             TopicConfig topicConfig = new TopicConfig(topic);
             this.systemTopicList.add(topic);
@@ -67,6 +68,7 @@ public class TopicConfigManager extends ConfigManager {
         }
         {
             // MixAll.AUTO_CREATE_TOPIC_KEY_TOPIC
+            // 如果开始topic自动创建，自动创建的topic
             if (this.brokerController.getBrokerConfig().isAutoCreateTopicEnable()) {
                 String topic = MixAll.AUTO_CREATE_TOPIC_KEY_TOPIC;
                 TopicConfig topicConfig = new TopicConfig(topic);
@@ -75,13 +77,14 @@ public class TopicConfigManager extends ConfigManager {
                     .getDefaultTopicQueueNums());
                 topicConfig.setWriteQueueNums(this.brokerController.getBrokerConfig()
                     .getDefaultTopicQueueNums());
-                int perm = PermName.PERM_INHERIT | PermName.PERM_READ | PermName.PERM_WRITE;
+                int perm = PermName.PERM_INHERIT | PermName.PERM_READ | PermName.PERM_WRITE; // 7
                 topicConfig.setPerm(perm);
                 this.topicConfigTable.put(topicConfig.getTopicName(), topicConfig);
             }
         }
         {
             // MixAll.BENCHMARK_TOPIC
+            // benchmark的topic
             String topic = MixAll.BENCHMARK_TOPIC;
             TopicConfig topicConfig = new TopicConfig(topic);
             this.systemTopicList.add(topic);
@@ -90,7 +93,7 @@ public class TopicConfigManager extends ConfigManager {
             this.topicConfigTable.put(topicConfig.getTopicName(), topicConfig);
         }
         {
-
+            // cluster的topic
             String topic = this.brokerController.getBrokerConfig().getBrokerClusterName();
             TopicConfig topicConfig = new TopicConfig(topic);
             this.systemTopicList.add(topic);
@@ -102,7 +105,7 @@ public class TopicConfigManager extends ConfigManager {
             this.topicConfigTable.put(topicConfig.getTopicName(), topicConfig);
         }
         {
-
+            // broker 的topic
             String topic = this.brokerController.getBrokerConfig().getBrokerName();
             TopicConfig topicConfig = new TopicConfig(topic);
             this.systemTopicList.add(topic);
@@ -117,6 +120,7 @@ public class TopicConfigManager extends ConfigManager {
         }
         {
             // MixAll.OFFSET_MOVED_EVENT
+            // offset topic
             String topic = MixAll.OFFSET_MOVED_EVENT;
             TopicConfig topicConfig = new TopicConfig(topic);
             this.systemTopicList.add(topic);
@@ -125,6 +129,7 @@ public class TopicConfigManager extends ConfigManager {
             this.topicConfigTable.put(topicConfig.getTopicName(), topicConfig);
         }
         {
+            // trace 的topic
             if (this.brokerController.getBrokerConfig().isTraceTopicEnable()) {
                 String topic = this.brokerController.getBrokerConfig().getMsgTraceTopicName();
                 TopicConfig topicConfig = new TopicConfig(topic);
@@ -391,12 +396,21 @@ public class TopicConfigManager extends ConfigManager {
         return encode(false);
     }
 
+    /**
+     * TODO 什么时间点序列化到本地的
+     * 默认为 /User/liping/store/config/topics.json
+     * @return
+     */
     @Override
     public String configFilePath() {
         return BrokerPathConfigHelper.getTopicConfigPath(this.brokerController.getMessageStoreConfig()
             .getStorePathRootDir());
     }
 
+    /**
+     * 根据本地缓存的topic json数据加载到内存中
+     * @param jsonString
+     */
     @Override
     public void decode(String jsonString) {
         if (jsonString != null) {
@@ -417,6 +431,10 @@ public class TopicConfigManager extends ConfigManager {
         return topicConfigSerializeWrapper.toJson(prettyFormat);
     }
 
+    /**
+     * 打印加载的topic数据到日志文件中
+     * @param tcs
+     */
     private void printLoadDataWhenFirstBoot(final TopicConfigSerializeWrapper tcs) {
         Iterator<Entry<String, TopicConfig>> it = tcs.getTopicConfigTable().entrySet().iterator();
         while (it.hasNext()) {

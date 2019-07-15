@@ -81,7 +81,15 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
 
     private final Timer timer = new Timer("ClientHouseKeepingService", true);
 
+
+    /**
+     * TODO 什么时间set的
+     */
     private final AtomicReference<List<String>> namesrvAddrList = new AtomicReference<List<String>>();
+
+    /**
+     * TODO 什么时间set的
+     */
     private final AtomicReference<String> namesrvAddrChoosed = new AtomicReference<String>();
     private final AtomicInteger namesrvIndex = new AtomicInteger(initValueIndex());
     private final Lock lockNamesrvChannel = new ReentrantLock();
@@ -98,6 +106,7 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
     public NettyRemotingClient(final NettyClientConfig nettyClientConfig) {
         this(nettyClientConfig, null);
     }
+
 
     public NettyRemotingClient(final NettyClientConfig nettyClientConfig,
         final ChannelEventListener channelEventListener) {
@@ -359,20 +368,44 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
     }
 
 
-
+    /**
+     * 同步请求
+     * @param addr 请求地址
+     * @param request 请求command
+     * @param timeoutMillis 超时时间
+     * @return
+     * @throws InterruptedException
+     * @throws RemotingConnectException
+     * @throws RemotingSendRequestException
+     * @throws RemotingTimeoutException
+     */
     @Override
     public RemotingCommand invokeSync(String addr, final RemotingCommand request, long timeoutMillis)
         throws InterruptedException, RemotingConnectException, RemotingSendRequestException, RemotingTimeoutException {
+
+
+        // 设置开始时间
         long beginStartTime = System.currentTimeMillis();
+
+        // 根据地址选择连接如果没有则创建连接
         final Channel channel = this.getAndCreateChannel(addr);
+
         if (channel != null && channel.isActive()) {
             try {
+
+                // beforeInvoke 监听
                 doBeforeRpcHooks(addr, request);
+
+                // 创建连接时间，如果超过调用超时时间直接抛出异常
                 long costTime = System.currentTimeMillis() - beginStartTime;
                 if (timeoutMillis < costTime) {
                     throw new RemotingTimeoutException("invokeSync call timeout");
                 }
+
+                // 远程调用
                 RemotingCommand response = this.invokeSyncImpl(channel, request, timeoutMillis - costTime);
+
+                // afterInvoke 监听
                 doAfterRpcHooks(RemotingHelper.parseChannelRemoteAddr(channel), request, response);
                 return response;
             } catch (RemotingSendRequestException e) {
@@ -393,6 +426,13 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
         }
     }
 
+
+    /**
+     * 从channel缓存中获取channel如果没有则创建
+     * @param addr
+     * @return
+     * @throws InterruptedException
+     */
     private Channel getAndCreateChannel(final String addr) throws InterruptedException {
         if (null == addr) {
             return getAndCreateNameserverChannel();
@@ -406,6 +446,12 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
         return this.createChannel(addr);
     }
 
+
+    /**
+     * 根据nameServer 信息创建channel
+     * @return
+     * @throws InterruptedException
+     */
     private Channel getAndCreateNameserverChannel() throws InterruptedException {
         String addr = this.namesrvAddrChoosed.get();
         if (addr != null) {
@@ -428,6 +474,8 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
 
                 if (addrList != null && !addrList.isEmpty()) {
                     for (int i = 0; i < addrList.size(); i++) {
+
+                        // 随机选择一个nameServer创建channel
                         int index = this.namesrvIndex.incrementAndGet();
                         index = Math.abs(index);
                         index = index % addrList.size();
@@ -453,7 +501,16 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
         return null;
     }
 
+
+    /**
+     * 根据nameServer的地址，建立连接创建channel
+     * @param addr
+     * @return
+     * @throws InterruptedException
+     */
     private Channel createChannel(final String addr) throws InterruptedException {
+
+        // 检查
         ChannelWrapper cw = this.channelTables.get(addr);
         if (cw != null && cw.isOK()) {
             cw.getChannel().close();

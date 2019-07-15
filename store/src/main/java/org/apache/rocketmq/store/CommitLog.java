@@ -57,6 +57,10 @@ public class CommitLog {
 
     private final AppendMessageCallback appendMessageCallback;
     private final ThreadLocal<MessageExtBatchEncoder> batchEncoderThreadLocal;
+
+    /**
+     * 缓存消息在队列中的偏移量
+     */
     protected HashMap<String/* topic-queueid */, Long/* offset */> topicQueueTable = new HashMap<String, Long>(1024);
     protected volatile long confirmOffset = -1L;
 
@@ -127,6 +131,14 @@ public class CommitLog {
         return this.mappedFileQueue.remainHowManyDataToFlush();
     }
 
+    /**
+     * 删除过期的文件
+     * @param expiredTime 默认为 72 * 60 * 60 * 1000
+     * @param deleteFilesInterval 删除多个文件的间隔时间
+     * @param intervalForcibly 是否强制删除
+     * @param cleanImmediately 马上删除
+     * @return
+     */
     public int deleteExpiredFile(
         final long expiredTime,
         final int deleteFilesInterval,
@@ -143,6 +155,12 @@ public class CommitLog {
         return this.getData(offset, offset == 0);
     }
 
+    /**
+     * 返回这个offset后面的可读数据
+     * @param offset
+     * @param returnFirstOnNotFound
+     * @return
+     */
     public SelectMappedBufferResult getData(final long offset, final boolean returnFirstOnNotFound) {
         int mappedFileSize = this.defaultMessageStore.getMessageStoreConfig().getMapedFileSizeCommitLog();
         MappedFile mappedFile = this.mappedFileQueue.findMappedFileByOffset(offset, returnFirstOnNotFound);
@@ -157,6 +175,7 @@ public class CommitLog {
 
     /**
      * When the normal exit, data recovery, all memory data have been flush
+     * @param maxPhyOffsetOfConsumeQueue  consumeQueue建立的最后一个偏移量消息位置
      */
     public void recoverNormally(long maxPhyOffsetOfConsumeQueue) {
         boolean checkCRCOnRecover = this.defaultMessageStore.getMessageStoreConfig().isCheckCRCOnRecover();
@@ -233,7 +252,7 @@ public class CommitLog {
 
     /**
      * check the message and returns the message size
-     *
+     * 构造分发请求用户构造MessageQueue IndexFile
      * @return 0 Come the end of the file // >0 Normal messages // -1 Message checksum failure
      */
     public DispatchRequest checkMessageAndReturnSize(java.nio.ByteBuffer byteBuffer, final boolean checkCRC,
@@ -372,21 +391,28 @@ public class CommitLog {
         return new DispatchRequest(-1, false /* success */);
     }
 
+    /**
+     * 计算消息的长度，此处需要注意每一个消息是不定长的前4个字节表示消息的长度
+     * @param bodyLength
+     * @param topicLength
+     * @param propertiesLength
+     * @return
+     */
     protected static int calMsgLength(int bodyLength, int topicLength, int propertiesLength) {
-        final int msgLen = 4 //TOTALSIZE
-            + 4 //MAGICCODE
-            + 4 //BODYCRC
-            + 4 //QUEUEID
-            + 4 //FLAG
-            + 8 //QUEUEOFFSET
-            + 8 //PHYSICALOFFSET
-            + 4 //SYSFLAG
-            + 8 //BORNTIMESTAMP
-            + 8 //BORNHOST
-            + 8 //STORETIMESTAMP
-            + 8 //STOREHOSTADDRESS
-            + 4 //RECONSUMETIMES
-            + 8 //Prepared Transaction Offset
+        final int msgLen = 4 //TOTALSIZE 这条消息的总长度
+            + 4 //MAGICCODE 魔数
+            + 4 //BODYCRC 消息体crc校验码
+            + 4 //QUEUEID 消息队列ID
+            + 4 //FLAG 消息FLAG
+            + 8 //QUEUEOFFSET 消息在消息队列的偏移量
+            + 8 //PHYSICALOFFSET 消息在CommitLog文件中的偏移量
+            + 4 //SYSFLAG 消息系统FLAG，是否压缩是否事务消息
+            + 8 //BORNTIMESTAMP 消息生产者调用消息发送API的时间戳
+            + 8 //BORNHOST 消息发送者IP
+            + 8 //STORETIMESTAMP 消息存储时间戳
+            + 8 //STOREHOSTADDRESS Broker服务器IP加端口
+            + 4 //RECONSUMETIMES 消息重试次数
+            + 8 //Prepared Transaction Offset  事务消息物理偏移量
             + 4 + (bodyLength > 0 ? bodyLength : 0) //BODY
             + 1 + topicLength //TOPIC
             + 2 + (propertiesLength > 0 ? propertiesLength : 0) //propertiesLength
@@ -534,7 +560,7 @@ public class CommitLog {
     }
 
     public PutMessageResult putMessage(final MessageExtBrokerInner msg) {
-        // Set the storage time
+        // Set the storage time 设置存储的时间
         msg.setStoreTimestamp(System.currentTimeMillis());
         // Set the message body BODY CRC (consider the most appropriate setting
         // on the client)
@@ -552,11 +578,14 @@ public class CommitLog {
             || tranType == MessageSysFlag.TRANSACTION_COMMIT_TYPE) {
             // Delay Delivery
             if (msg.getDelayTimeLevel() > 0) {
+                // 校验如果delay的时间大于最大的，则设置为最大的level
                 if (msg.getDelayTimeLevel() > this.defaultMessageStore.getScheduleMessageService().getMaxDelayLevel()) {
                     msg.setDelayTimeLevel(this.defaultMessageStore.getScheduleMessageService().getMaxDelayLevel());
                 }
 
+                // 将topic设置为延迟消费主题SCHEDULE_TOPIC_XXXX
                 topic = ScheduleMessageService.SCHEDULE_TOPIC;
+
                 queueId = ScheduleMessageService.delayLevel2QueueId(msg.getDelayTimeLevel());
 
                 // Backup real topic, queueId
@@ -573,6 +602,7 @@ public class CommitLog {
         MappedFile unlockMappedFile = null;
         MappedFile mappedFile = this.mappedFileQueue.getLastMappedFile();
 
+        // 默认使用spinLock
         putMessageLock.lock(); //spin or ReentrantLock ,depending on store config
         try {
             long beginLockTimestamp = this.defaultMessageStore.getSystemClock().now();
@@ -629,6 +659,7 @@ public class CommitLog {
             log.warn("[NOTIFYME]putMessage in lock cost time(ms)={}, bodyLength={} AppendMessageResult={}", eclipseTimeInLock, msg.getBody().length, result);
         }
 
+        // TODO 这是做啥子
         if (null != unlockMappedFile && this.defaultMessageStore.getMessageStoreConfig().isWarmMapedFileEnable()) {
             this.defaultMessageStore.unlockMappedFile(unlockMappedFile);
         }
@@ -639,6 +670,7 @@ public class CommitLog {
         storeStatsService.getSinglePutMessageTopicTimesTotal(msg.getTopic()).incrementAndGet();
         storeStatsService.getSinglePutMessageTopicSizeTotal(topic).addAndGet(result.getWroteBytes());
 
+        //TODO 消息刷盘
         handleDiskFlush(result, putMessageResult, msg);
         handleHA(result, putMessageResult, msg);
 
@@ -814,6 +846,10 @@ public class CommitLog {
         return -1;
     }
 
+    /**
+     * 获取MappedFiles中最小的offset
+     * @return
+     */
     public long getMinOffset() {
         MappedFile mappedFile = this.mappedFileQueue.getFirstMappedFile();
         if (mappedFile != null) {
@@ -827,6 +863,15 @@ public class CommitLog {
         return -1;
     }
 
+    /**
+     * 根据偏移量和消息长度查找消息
+     * 首先获取MappedFile大小
+     * 根据偏移量获取属于哪个MappedFile
+     * 从MappedFile的mappedByteBuffer中读取数据
+     * @param offset 偏移量
+     * @param size 消息大小
+     * @return 消息ByteBuffer
+     */
     public SelectMappedBufferResult getMessage(final long offset, final int size) {
         int mappedFileSize = this.defaultMessageStore.getMessageStoreConfig().getMapedFileSizeCommitLog();
         MappedFile mappedFile = this.mappedFileQueue.findMappedFileByOffset(offset, offset == 0);
@@ -837,6 +882,11 @@ public class CommitLog {
         return null;
     }
 
+    /**
+     * 根据offset获取下一个MappedFile的offset
+     * @param offset
+     * @return
+     */
     public long rollNextFile(final long offset) {
         int mappedFileSize = this.defaultMessageStore.getMessageStoreConfig().getMapedFileSizeCommitLog();
         return offset + mappedFileSize - offset % mappedFileSize;
@@ -1074,6 +1124,7 @@ public class CommitLog {
         private volatile List<GroupCommitRequest> requestsWrite = new ArrayList<GroupCommitRequest>();
         private volatile List<GroupCommitRequest> requestsRead = new ArrayList<GroupCommitRequest>();
 
+        // TODO 为什么两个sync
         public synchronized void putRequest(final GroupCommitRequest request) {
             synchronized (this.requestsWrite) {
                 this.requestsWrite.add(request);
@@ -1166,8 +1217,14 @@ public class CommitLog {
         }
     }
 
+    /**
+     * 组装消息，写入文件中
+     */
     class DefaultAppendMessageCallback implements AppendMessageCallback {
         // File at the end of the minimum fixed length empty
+        /**
+         * 高4字节存储当前文件剩余空间，低4字节存储魔数
+         */
         private static final int END_FILE_MIN_BLANK_LENGTH = 4 + 4;
         private final ByteBuffer msgIdMemory;
         // Store the message content
@@ -1191,14 +1248,24 @@ public class CommitLog {
             return msgStoreItemMemory;
         }
 
+        /**
+         *
+         * @param fileFromOffset 文件起始的offset
+         * @param byteBuffer 文件对应的byteBuffer
+         * @param maxBlank 文件剩余的空间
+         * @param msgInner  消息
+         * @return
+         */
         public AppendMessageResult doAppend(final long fileFromOffset, final ByteBuffer byteBuffer, final int maxBlank,
             final MessageExtBrokerInner msgInner) {
             // STORETIMESTAMP + STOREHOSTADDRESS + OFFSET <br>
 
-            // PHY OFFSET
+            // PHY OFFSET 开始写的位置
             long wroteOffset = fileFromOffset + byteBuffer.position();
 
             this.resetByteBuffer(hostHolder, 8);
+
+            // 创建消息ID  |----4字节ID|----4字节端口号----|----8字节消息偏移量---|
             String msgId = MessageDecoder.createMessageId(this.msgIdMemory, msgInner.getStoreHostBytes(hostHolder), wroteOffset);
 
             // Record ConsumeQueue information
@@ -1246,16 +1313,18 @@ public class CommitLog {
 
             final int bodyLength = msgInner.getBody() == null ? 0 : msgInner.getBody().length;
 
+            // 计算消息的长度
             final int msgLen = calMsgLength(bodyLength, topicLength, propertiesLength);
 
-            // Exceeds the maximum message
+            // Exceeds the maximum message 校验消息是否超过最大长度
             if (msgLen > this.maxMessageSize) {
                 CommitLog.log.warn("message size exceeded, msg total size: " + msgLen + ", msg body size: " + bodyLength
                     + ", maxMessageSize: " + this.maxMessageSize);
                 return new AppendMessageResult(AppendMessageStatus.MESSAGE_SIZE_EXCEEDED);
             }
 
-            // Determines whether there is sufficient free space
+            // Determines whether there is sufficient free space 如果消息长度加上最小剩余空间大于MappedFile剩余空间，返回END_OF_FILE，
+            // 由Broker创建MappedFile存储该消息
             if ((msgLen + END_FILE_MIN_BLANK_LENGTH) > maxBlank) {
                 this.resetByteBuffer(this.msgStoreItemMemory, maxBlank);
                 // 1 TOTALSIZE

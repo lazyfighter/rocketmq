@@ -83,6 +83,11 @@ public class UtilAll {
         return sb.toString();
     }
 
+    /**
+     * TODO  学习下NumberFormat
+     * @param offset
+     * @return
+     */
     public static String offset2FileName(final long offset) {
         final NumberFormat nf = NumberFormat.getInstance();
         nf.setMinimumIntegerDigits(20);
@@ -195,6 +200,11 @@ public class UtilAll {
             cal.get(Calendar.SECOND));
     }
 
+    /**
+     * 获取目录的使用空间大小
+     * @param path
+     * @return
+     */
     public static double getDiskPartitionSpaceUsedPercent(final String path) {
         if (null == path || path.isEmpty())
             return -1;

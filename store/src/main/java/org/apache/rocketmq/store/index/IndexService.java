@@ -54,6 +54,11 @@ public class IndexService {
             StorePathConfigHelper.getStorePathIndex(store.getMessageStoreConfig().getStorePathRootDir());
     }
 
+    /**
+     *
+     * @param lastExitOK
+     * @return
+     */
     public boolean load(final boolean lastExitOK) {
         File dir = new File(this.storePath);
         File[] files = dir.listFiles();
@@ -198,6 +203,10 @@ public class IndexService {
         return topic + "#" + key;
     }
 
+    /**
+     * 根据分发的request构建IndexFile
+     * @param req
+     */
     public void buildIndex(DispatchRequest req) {
         IndexFile indexFile = retryGetAndCreateIndexFile();
         if (indexFile != null) {
@@ -205,6 +214,7 @@ public class IndexService {
             DispatchRequest msg = req;
             String topic = msg.getTopic();
             String keys = msg.getKeys();
+            // 说明构建过indexFile了
             if (msg.getCommitLogOffset() < endPhyOffset) {
                 return;
             }
@@ -289,6 +299,11 @@ public class IndexService {
         return indexFile;
     }
 
+    /**
+     * 获取最后一个indexFile
+     * 如果上一个indexFile满了则起一个守护线程flush
+     * @return
+     */
     public IndexFile getAndCreateLastIndexFile() {
         IndexFile indexFile = null;
         IndexFile prevIndexFile = null;
@@ -327,6 +342,8 @@ public class IndexService {
                 this.readWriteLock.writeLock().unlock();
             }
 
+
+            // TODO 为什么刷indexFile是守护线程
             if (indexFile != null) {
                 final IndexFile flushThisFile = prevIndexFile;
                 Thread flushThread = new Thread(new Runnable() {

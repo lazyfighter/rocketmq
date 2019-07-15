@@ -40,6 +40,7 @@ public class ServerUtil {
         return options;
     }
 
+    // 将参数转换为CommandLine, 如果存在h选项，打印help返回空
     public static CommandLine parseCmdLine(final String appName, String[] args, Options options,
         CommandLineParser parser) {
         HelpFormatter hf = new HelpFormatter();

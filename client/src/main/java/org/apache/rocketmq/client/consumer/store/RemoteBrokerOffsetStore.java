@@ -55,6 +55,13 @@ public class RemoteBrokerOffsetStore implements OffsetStore {
     public void load() {
     }
 
+
+    /**
+     * 根据提供的offset，更新offset数据
+     * @param mq
+     * @param offset
+     * @param increaseOnly
+     */
     @Override
     public void updateOffset(MessageQueue mq, long offset, boolean increaseOnly) {
         if (mq != null) {
@@ -228,6 +235,16 @@ public class RemoteBrokerOffsetStore implements OffsetStore {
         }
     }
 
+
+    /**
+     * 从broker中查询消费的offset
+     * @param mq
+     * @return
+     * @throws RemotingException
+     * @throws MQBrokerException
+     * @throws InterruptedException
+     * @throws MQClientException
+     */
     private long fetchConsumeOffsetFromBroker(MessageQueue mq) throws RemotingException, MQBrokerException,
         InterruptedException, MQClientException {
         FindBrokerResult findBrokerResult = this.mQClientFactory.findBrokerAddressInAdmin(mq.getBrokerName());

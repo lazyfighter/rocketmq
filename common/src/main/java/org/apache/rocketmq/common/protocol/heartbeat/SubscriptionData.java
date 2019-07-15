@@ -26,13 +26,33 @@ import org.apache.rocketmq.common.filter.ExpressionType;
 import java.util.HashSet;
 import java.util.Set;
 
+
+/**
+ * 订阅消息数据存储
+ */
 public class SubscriptionData implements Comparable<SubscriptionData> {
     public final static String SUB_ALL = "*";
     private boolean classFilterMode = false;
+    /**
+     * 主题
+     */
     private String topic;
+    /**
+     * 过滤规则
+     */
     private String subString;
+    /**
+     * 过滤规则tag数据
+     */
     private Set<String> tagsSet = new HashSet<String>();
+    /**
+     * 过滤规则tag hashcode
+     */
     private Set<Integer> codeSet = new HashSet<Integer>();
+
+    /**
+     * 订阅规则创建时间
+     */
     private long subVersion = System.currentTimeMillis();
     private String expressionType = ExpressionType.TAG;
 

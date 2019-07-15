@@ -16,6 +16,9 @@
  */
 package org.apache.rocketmq.common;
 
+/**
+ * 系统时钟，参考Sentinel 可以进行优化
+ */
 public class SystemClock {
     public long now() {
         return System.currentTimeMillis();

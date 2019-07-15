@@ -94,6 +94,10 @@ public class MixAll {
     public static final String RMQ_SYS_TRANS_OP_HALF_TOPIC = "RMQ_SYS_TRANS_OP_HALF_TOPIC";
     public static final String CID_SYS_RMQ_TRANS = "CID_RMQ_SYS_TRANS";
 
+    /**
+     * TODO 做啥子的
+     * @return
+     */
     public static String getWSAddr() {
         String wsDomainName = System.getProperty("rocketmq.namesrv.domain", DEFAULT_NAMESRV_ADDR_LOOKUP);
         String wsDomainSubgroup = System.getProperty("rocketmq.namesrv.domain.subgroup", "nsaddr");
@@ -120,6 +124,13 @@ public class MixAll {
         return DLQ_GROUP_TOPIC_PREFIX + consumerGroup;
     }
 
+
+    /**
+     *
+     * @param isChange
+     * @param brokerAddr
+     * @return
+     */
     public static String brokerVIPChannel(final boolean isChange, final String brokerAddr) {
         if (isChange) {
             String[] ipAndPort = brokerAddr.split(":");
@@ -181,6 +192,12 @@ public class MixAll {
         }
     }
 
+    /**
+     * 读取文件中的内容
+     * @param fileName 文件路径
+     * @return 文件中的内容
+     * @throws IOException
+     */
     public static String file2String(final String fileName) throws IOException {
         File file = new File(fileName);
         return file2String(file);

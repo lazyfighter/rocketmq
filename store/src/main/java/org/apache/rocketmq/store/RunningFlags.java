@@ -69,6 +69,14 @@ public class RunningFlags {
         return result;
     }
 
+    /**
+     * flagBits                             00000
+     * NOT_WRITEABLE_BIT                    00010
+     * WRITE_LOGICS_QUEUE_ERROR_BIT         00100
+     * WRITE_INDEX_FILE_ERROR_BIT           01000
+     * DISK_FULL_BIT                        10000
+     * @return
+     */
     public boolean isWriteable() {
         if ((this.flagBits & (NOT_WRITEABLE_BIT | WRITE_LOGICS_QUEUE_ERROR_BIT | DISK_FULL_BIT | WRITE_INDEX_FILE_ERROR_BIT)) == 0) {
             return true;
@@ -106,6 +114,9 @@ public class RunningFlags {
         return false;
     }
 
+    /**
+     * 标记写indexFile失败
+     */
     public void makeIndexFileError() {
         this.flagBits |= WRITE_INDEX_FILE_ERROR_BIT;
     }

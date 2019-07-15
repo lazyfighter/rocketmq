@@ -76,6 +76,15 @@ public class MQAdminImpl {
         createTopic(key, newTopic, queueNum, 0);
     }
 
+
+    /**
+     * 创建主题
+     * @param key
+     * @param newTopic
+     * @param queueNum
+     * @param topicSysFlag
+     * @throws MQClientException
+     */
     public void createTopic(String key, String newTopic, int queueNum, int topicSysFlag) throws MQClientException {
         try {
             TopicRouteData topicRouteData = this.mQClientFactory.getMQClientAPIImpl().getTopicRouteInfoFromNameServer(key, timeoutMillis);

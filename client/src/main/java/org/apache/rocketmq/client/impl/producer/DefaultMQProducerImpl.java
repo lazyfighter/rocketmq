@@ -173,9 +173,11 @@ public class DefaultMQProducerImpl implements MQProducerInner {
             case CREATE_JUST:
                 this.serviceState = ServiceState.START_FAILED;
 
+                // 校验ProducerGroup是否符合规范
                 this.checkConfig();
 
                 if (!this.defaultMQProducer.getProducerGroup().equals(MixAll.CLIENT_INNER_PRODUCER_GROUP)) {
+                    // 改变生产者的instanceName为进程ID
                     this.defaultMQProducer.changeInstanceNameToPID();
                 }
 
@@ -261,6 +263,12 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         return topicList;
     }
 
+
+    /**
+     * 根据topic信息获取路由信息
+     * @param topic
+     * @return
+     */
     @Override
     public boolean isPublishTopicNeedUpdate(String topic) {
         TopicPublishInfo prev = this.topicPublishInfoTable.get(topic);

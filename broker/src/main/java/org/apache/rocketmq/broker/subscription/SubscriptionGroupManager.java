@@ -34,6 +34,9 @@ import org.apache.rocketmq.remoting.protocol.RemotingSerializable;
 public class SubscriptionGroupManager extends ConfigManager {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
 
+    /**
+     * 订阅组信息
+     */
     private final ConcurrentMap<String, SubscriptionGroupConfig> subscriptionGroupTable =
         new ConcurrentHashMap<String, SubscriptionGroupConfig>(1024);
     private final DataVersion dataVersion = new DataVersion();
@@ -140,12 +143,20 @@ public class SubscriptionGroupManager extends ConfigManager {
         return this.encode(false);
     }
 
+    /**
+     * 默认地址为 /User/liping/store/config/subscriptionGroup.json
+     * @return
+     */
     @Override
     public String configFilePath() {
         return BrokerPathConfigHelper.getSubscriptionGroupPath(this.brokerController.getMessageStoreConfig()
             .getStorePathRootDir());
     }
 
+    /**
+     * 将持久化本地的数据加载到缓存中
+     * @param jsonString
+     */
     @Override
     public void decode(String jsonString) {
         if (jsonString != null) {

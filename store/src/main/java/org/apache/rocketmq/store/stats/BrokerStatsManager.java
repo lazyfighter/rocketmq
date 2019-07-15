@@ -66,6 +66,10 @@ public class BrokerStatsManager {
         "BrokerStatsThread"));
     private final ScheduledExecutorService commercialExecutor = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryImpl(
         "CommercialStatsThread"));
+
+    /**
+     * 几率consumeGroup对topic的消费成功次数以及拉取消息数量
+     */
     private final HashMap<String, StatsItemSet> statsTable = new HashMap<String, StatsItemSet>();
     private final String clusterName;
     private final MomentStatsItemSet momentStatsItemSetFallSize = new MomentStatsItemSet(GROUP_GET_FALL_SIZE, scheduledExecutorService, log);

@@ -48,6 +48,9 @@ public abstract class RebalanceImpl {
     protected final ConcurrentMap<MessageQueue, ProcessQueue> processQueueTable = new ConcurrentHashMap<MessageQueue, ProcessQueue>(64);
     protected final ConcurrentMap<String/* topic */, Set<MessageQueue>> topicSubscribeInfoTable =
         new ConcurrentHashMap<String, Set<MessageQueue>>();
+    /**
+     * 消费者订阅主题规则数据
+     */
     protected final ConcurrentMap<String /* topic */, SubscriptionData> subscriptionInner =
         new ConcurrentHashMap<String, SubscriptionData>();
     protected String consumerGroup;
@@ -216,6 +219,10 @@ public abstract class RebalanceImpl {
         }
     }
 
+    /**
+     * 拿到消费者订阅的topic数据，按照topic进行rebalance
+     * @param isOrder
+     */
     public void doRebalance(final boolean isOrder) {
         Map<String, SubscriptionData> subTable = this.getSubscriptionInner();
         if (subTable != null) {
@@ -238,6 +245,12 @@ public abstract class RebalanceImpl {
         return subscriptionInner;
     }
 
+
+    /**
+     * 按照主题进行rebalance
+     * @param topic
+     * @param isOrder
+     */
     private void rebalanceByTopic(final String topic, final boolean isOrder) {
         switch (messageModel) {
             case BROADCASTING: {
@@ -258,7 +271,9 @@ public abstract class RebalanceImpl {
                 break;
             }
             case CLUSTERING: {
+                // 所有的队列
                 Set<MessageQueue> mqSet = this.topicSubscribeInfoTable.get(topic);
+                // 所有的消费者id
                 List<String> cidAll = this.mQClientFactory.findConsumerIdList(topic, consumerGroup);
                 if (null == mqSet) {
                     if (!topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
@@ -274,6 +289,8 @@ public abstract class RebalanceImpl {
                     List<MessageQueue> mqAll = new ArrayList<MessageQueue>();
                     mqAll.addAll(mqSet);
 
+
+                    // TODO 为什么需要排序
                     Collections.sort(mqAll);
                     Collections.sort(cidAll);
 
@@ -328,6 +345,19 @@ public abstract class RebalanceImpl {
         }
     }
 
+
+    /**
+     * 根据分配给consumer的messageQueue 来更新processQueue
+     * 消费者的具体是如何进行消费的是根据processQueueTable来的，
+     * 此处的mqSet为新分给消费的MessageQueue
+     * 因此开始遍历原先的processQueueTable
+     * 如果新的mqSet不包含原先的，则说明不再消费这个MessageQueue，将MessageQueue以及ProcessQueue移除
+     * 如果新的mqSet存在新加的，则放入processQueueTable，同时创建pullRequest拉取任务
+     * @param topic
+     * @param mqSet
+     * @param isOrder
+     * @return
+     */
     private boolean updateProcessQueueTableInRebalance(final String topic, final Set<MessageQueue> mqSet,
         final boolean isOrder) {
         boolean changed = false;
@@ -374,8 +404,11 @@ public abstract class RebalanceImpl {
                     continue;
                 }
 
+                // 删除messageQueue的offset数据，从新进行分配
                 this.removeDirtyOffset(mq);
                 ProcessQueue pq = new ProcessQueue();
+
+                // 计算开始拉取消息的的offset位置
                 long nextOffset = this.computePullFromWhere(mq);
                 if (nextOffset >= 0) {
                     ProcessQueue pre = this.processQueueTable.putIfAbsent(mq, pq);
@@ -383,6 +416,7 @@ public abstract class RebalanceImpl {
                         log.info("doRebalance, {}, mq already exists, {}", consumerGroup, mq);
                     } else {
                         log.info("doRebalance, {}, add a new mq, {}", consumerGroup, mq);
+                        // 说明messageQueue为新添加的增加拉取任务
                         PullRequest pullRequest = new PullRequest();
                         pullRequest.setConsumerGroup(consumerGroup);
                         pullRequest.setNextOffset(nextOffset);

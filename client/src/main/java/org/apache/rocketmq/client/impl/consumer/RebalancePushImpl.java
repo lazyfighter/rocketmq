@@ -47,6 +47,13 @@ public class RebalancePushImpl extends RebalanceImpl {
         this.defaultMQPushConsumerImpl = defaultMQPushConsumerImpl;
     }
 
+
+    /**
+     * TODO 计算流控数据，需要看一下这两个流控数据是做什么的
+     * @param topic
+     * @param mqAll 全部的MessageQueue
+     * @param mqDivided 分配给消费者的MessageQueue
+     */
     @Override
     public void messageQueueChanged(String topic, Set<MessageQueue> mqAll, Set<MessageQueue> mqDivided) {
         /**
@@ -137,6 +144,13 @@ public class RebalancePushImpl extends RebalanceImpl {
         this.defaultMQPushConsumerImpl.getOffsetStore().removeOffset(mq);
     }
 
+
+    /**
+     * 计算从offset拉取数据
+     * @param mq
+     * @return offset
+     *
+     */
     @Override
     public long computePullFromWhere(MessageQueue mq) {
         long result = -1;
@@ -147,6 +161,8 @@ public class RebalancePushImpl extends RebalanceImpl {
             case CONSUME_FROM_MIN_OFFSET:
             case CONSUME_FROM_MAX_OFFSET:
             case CONSUME_FROM_LAST_OFFSET: {
+
+                // 从远程查询offset数据
                 long lastOffset = offsetStore.readOffset(mq, ReadOffsetType.READ_FROM_STORE);
                 if (lastOffset >= 0) {
                     result = lastOffset;
@@ -211,6 +227,11 @@ public class RebalancePushImpl extends RebalanceImpl {
         return result;
     }
 
+
+    /**
+     * 分配pullRequest
+     * @param pullRequestList
+     */
     @Override
     public void dispatchPullRequest(List<PullRequest> pullRequestList) {
         for (PullRequest pullRequest : pullRequestList) {

@@ -48,6 +48,13 @@ public class AllocateMappedFileService extends ServiceThread {
         this.messageStore = messageStore;
     }
 
+    /**
+     * TODO 如何创建MappedFile的
+     * @param nextFilePath
+     * @param nextNextFilePath
+     * @param fileSize
+     * @return
+     */
     public MappedFile putRequestAndReturnMappedFile(String nextFilePath, String nextNextFilePath, int fileSize) {
         int canSubmitRequests = 2;
         if (this.messageStore.getMessageStoreConfig().isTransientStorePoolEnable()) {

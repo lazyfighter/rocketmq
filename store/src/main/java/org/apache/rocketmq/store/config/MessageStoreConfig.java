@@ -66,16 +66,34 @@ public class MessageStoreConfig {
     // Resource reclaim interval
     private int cleanResourceInterval = 10000;
     // CommitLog removal interval
+    /**
+     * 在删除文件的时候可能会删除多个，当删除多个文件的间隔时间
+     */
     private int deleteCommitLogFilesInterval = 100;
     // ConsumeQueue removal interval
     private int deleteConsumeQueueFilesInterval = 100;
+
+    /**
+     * 在删除文件的时候会校验文件是否在被使用，如果在使用会记录当前的时间戳，
+     * 然后经过destroyMapedFileIntervalForcibly这个时间之后，文件引用变为负数，
+     * 直到为0被删除
+     * 不管文件是否在使用强制删除
+     */
     private int destroyMapedFileIntervalForcibly = 1000 * 120;
     private int redeleteHangedFileInterval = 1000 * 120;
     // When to delete,default is at 4 am
     @ImportantField
     private String deleteWhen = "04";
+
+    /**
+     * commitLog consumeQueue文件存储的最大使用空间
+     */
     private int diskMaxUsedSpaceRatio = 75;
     // The number of hours to keep a log file before deleting it (in hours)
+
+    /**
+     * 文件保留时间，也就是从最后一次更新到现在如果超过了该时间则认为过期文件，删除
+     */
     @ImportantField
     private int fileReservedTime = 72;
     // Flow control for ConsumeQueue
@@ -134,6 +152,10 @@ public class MessageStoreConfig {
     private boolean offsetCheckInSlave = false;
     private boolean debugLockEnable = false;
     private boolean duplicationEnable = false;
+
+    /**
+     * TODO 这个参数是做什么
+     */
     private boolean diskFallRecorded = true;
     private long osPageCacheBusyTimeOutMills = 1000;
     private int defaultQueryMaxNum = 32;

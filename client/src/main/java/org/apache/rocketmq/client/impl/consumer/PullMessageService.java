@@ -29,6 +29,10 @@ import org.apache.rocketmq.common.utils.ThreadUtils;
 
 public class PullMessageService extends ServiceThread {
     private final InternalLogger log = ClientLogger.getLog();
+
+    /**
+     * 存储消息拉取任务
+     */
     private final LinkedBlockingQueue<PullRequest> pullRequestQueue = new LinkedBlockingQueue<PullRequest>();
     private final MQClientInstance mQClientFactory;
     private final ScheduledExecutorService scheduledExecutorService = Executors
@@ -92,6 +96,7 @@ public class PullMessageService extends ServiceThread {
 
         while (!this.isStopped()) {
             try {
+                // 会阻塞
                 PullRequest pullRequest = this.pullRequestQueue.take();
                 this.pullMessage(pullRequest);
             } catch (InterruptedException ignored) {

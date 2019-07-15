@@ -27,6 +27,17 @@ import org.apache.rocketmq.logging.InternalLogger;
 import org.apache.rocketmq.logging.InternalLoggerFactory;
 import org.apache.rocketmq.store.MappedFile;
 
+
+/**
+ * |----40字节indexHeader|-----500w个hash槽，每个4个字节----|-----2000W个index条目，每个20个字节---|
+ *
+ *
+ * index条目
+ *
+ * |----4字节hashcode---|----8字节消息偏移量----|----5字节timedif----|-----4字节pre index no----|
+ *
+ * index条目中的4字节pre index no如果发生hash冲突，存储着hash冲突的上一个index条目的位置，以此来解决hash冲突
+ */
 public class IndexFile {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
     private static int hashSlotSize = 4;
@@ -89,11 +100,19 @@ public class IndexFile {
         return this.mappedFile.destroy(intervalForcibly);
     }
 
+    /**
+     * 将分发的请求构建索引
+     * @param key 用户的请求是带的uniq-key
+     * @param phyOffset 消息的偏移地址
+     * @param storeTimestamp 消息存储的时间
+     * @return
+     */
     public boolean putKey(final String key, final long phyOffset, final long storeTimestamp) {
+        // 如果存储的index超过限制数量直接返回false
         if (this.indexHeader.getIndexCount() < this.indexNum) {
-            int keyHash = indexKeyHashMethod(key);
-            int slotPos = keyHash % this.hashSlotNum;
-            int absSlotPos = IndexHeader.INDEX_HEADER_SIZE + slotPos * hashSlotSize;
+            int keyHash = indexKeyHashMethod(key); // 计算hashcode
+            int slotPos = keyHash % this.hashSlotNum; // 计算属于哪个槽
+            int absSlotPos = IndexHeader.INDEX_HEADER_SIZE + slotPos * hashSlotSize; // 找到槽的偏移地址
 
             FileLock fileLock = null;
 
@@ -101,11 +120,15 @@ public class IndexFile {
 
                 // fileLock = this.fileChannel.lock(absSlotPos, hashSlotSize,
                 // false);
+                // 确认之前这个槽是否有数据
                 int slotValue = this.mappedByteBuffer.getInt(absSlotPos);
+
+                // 没有数据或者数据大小大于indexCount 表明数据不对，直接设置为0
                 if (slotValue <= invalidIndex || slotValue > this.indexHeader.getIndexCount()) {
                     slotValue = invalidIndex;
                 }
 
+                // 获取相对于index的时间diff TODO 为什么存储TimeDiff 不直接存储storeTimestamp
                 long timeDiff = storeTimestamp - this.indexHeader.getBeginTimestamp();
 
                 timeDiff = timeDiff / 1000;
@@ -118,6 +141,7 @@ public class IndexFile {
                     timeDiff = 0;
                 }
 
+                // 计算index位置
                 int absIndexPos =
                     IndexHeader.INDEX_HEADER_SIZE + this.hashSlotNum * hashSlotSize
                         + this.indexHeader.getIndexCount() * indexSize;
@@ -186,6 +210,16 @@ public class IndexFile {
         return result;
     }
 
+
+    /**
+     * 根据索引key查找消息
+     * @param phyOffsets 查找到的消息的偏移量
+     * @param key 消息key
+     * @param maxNum 查找消息的最大数量
+     * @param begin 开始时间戳
+     * @param end 结束时间戳
+     * @param lock
+     */
     public void selectPhyOffset(final List<Long> phyOffsets, final String key, final int maxNum,
         final long begin, final long end, boolean lock) {
         if (this.mappedFile.hold()) {

@@ -26,19 +26,19 @@ public class PullSysFlag {
         final boolean subscription, final boolean classFilter) {
         int flag = 0;
 
-        if (commitOffset) {
+        if (commitOffset) { // 0001
             flag |= FLAG_COMMIT_OFFSET;
         }
 
-        if (suspend) {
+        if (suspend) { // 0010
             flag |= FLAG_SUSPEND;
         }
 
-        if (subscription) {
+        if (subscription) { // 0100
             flag |= FLAG_SUBSCRIPTION;
         }
 
-        if (classFilter) {
+        if (classFilter) { // 1000
             flag |= FLAG_CLASS_FILTER;
         }
 

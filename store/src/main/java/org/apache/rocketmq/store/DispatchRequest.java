@@ -23,8 +23,16 @@ public class DispatchRequest {
     private final int queueId;
     private final long commitLogOffset;
     private int msgSize;
+
+    /**
+     * 消息过滤， tag hashcode TODO 做啥子的
+     */
     private final long tagsCode;
     private final long storeTimestamp;
+
+    /**
+     * 消息队列偏移量
+     */
     private final long consumeQueueOffset;
     private final String keys;
     private final boolean success;

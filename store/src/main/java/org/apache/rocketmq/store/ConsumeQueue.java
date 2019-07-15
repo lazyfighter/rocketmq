@@ -24,6 +24,13 @@ import org.apache.rocketmq.logging.InternalLogger;
 import org.apache.rocketmq.logging.InternalLoggerFactory;
 import org.apache.rocketmq.store.config.StorePathConfigHelper;
 
+/**
+ * RocketMQ中所有的消息统一存储在CommitLog中，如果直接遍历CommitLog效率低下
+ * 为此设计了ConsumeQueue，该文件可以看成CommitLog关于消息消费的索引文件
+ * ConsumeQueue的 一级目录为Topic， 二级目录为Topic的消息队列
+ * 单个文件默认包含30w个条目，每个条目20个字节
+ * |----8字节commitLog offset---|----4字节size----|----8字节tag hashcode---|
+ */
 public class ConsumeQueue {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
@@ -33,12 +40,30 @@ public class ConsumeQueue {
     private final DefaultMessageStore defaultMessageStore;
 
     private final MappedFileQueue mappedFileQueue;
+    /**
+     * topic
+     */
     private final String topic;
+
+    /**
+     * queueId
+     */
     private final int queueId;
     private final ByteBuffer byteBufferIndex;
 
+    /**
+     * consumeQueue存储位置
+     */
     private final String storePath;
+
+    /**
+     * 存储的条目数量 默认为30W个
+     */
     private final int mappedFileSize;
+
+    /**
+     * 对应CommitLog的物理偏移量
+     */
     private long maxPhysicOffset = -1;
     private volatile long minLogicOffset = 0;
     private ConsumeQueueExt consumeQueueExt = null;
@@ -49,12 +74,14 @@ public class ConsumeQueue {
         final String storePath,
         final int mappedFileSize,
         final DefaultMessageStore defaultMessageStore) {
+
         this.storePath = storePath;
         this.mappedFileSize = mappedFileSize;
         this.defaultMessageStore = defaultMessageStore;
-
         this.topic = topic;
         this.queueId = queueId;
+
+
 
         String queueDir = this.storePath
             + File.separator + topic
@@ -64,6 +91,7 @@ public class ConsumeQueue {
 
         this.byteBufferIndex = ByteBuffer.allocate(CQ_STORE_UNIT_SIZE);
 
+        // TODO 这是做啥子的
         if (defaultMessageStore.getMessageStoreConfig().isEnableConsumeQueueExt()) {
             this.consumeQueueExt = new ConsumeQueueExt(
                 topic,
@@ -75,6 +103,10 @@ public class ConsumeQueue {
         }
     }
 
+    /**
+     * 从本地的ConsumeQueue的MappedFile加载数据到mappedFileQueue中
+     * @return
+     */
     public boolean load() {
         boolean result = this.mappedFileQueue.load();
         log.info("load consume queue " + this.topic + "-" + this.queueId + " " + (result ? "OK" : "Failed"));
@@ -84,13 +116,20 @@ public class ConsumeQueue {
         return result;
     }
 
+    /**
+     * 恢复ConsumeQueue中的数据
+     * 主要恢复 maxPhysicOffset、flushedWhere、committedWhere
+     *
+     */
     public void recover() {
         final List<MappedFile> mappedFiles = this.mappedFileQueue.getMappedFiles();
         if (!mappedFiles.isEmpty()) {
 
+            // Began to recover from the last third file
             int index = mappedFiles.size() - 3;
-            if (index < 0)
+            if (index < 0) {
                 index = 0;
+            }
 
             int mappedFileSizeLogics = this.mappedFileSize;
             MappedFile mappedFile = mappedFiles.get(index);
@@ -417,6 +456,14 @@ public class ConsumeQueue {
         this.defaultMessageStore.getRunningFlags().makeLogicsQueueError();
     }
 
+    /**
+     *
+     * @param offset 消息对应commitlog的偏移量
+     * @param size   消息大小
+     * @param tagsCode  tag hashcode
+     * @param cqOffset consumeQueue的偏移量
+     * @return
+     */
     private boolean putMessagePositionInfo(final long offset, final int size, final long tagsCode,
         final long cqOffset) {
 
@@ -447,7 +494,7 @@ public class ConsumeQueue {
 
             if (cqOffset != 0) {
                 long currentLogicOffset = mappedFile.getWrotePosition() + mappedFile.getFileFromOffset();
-
+                // 当前的mappedFile位置，如果想要的写的偏移量小于MappedFile已写的偏移量则表明已经建立过ConsumeQueue
                 if (expectLogicOffset < currentLogicOffset) {
                     log.warn("Build  consume queue repeatedly, expectLogicOffset: {} currentLogicOffset: {} Topic: {} QID: {} Diff: {}",
                         expectLogicOffset, currentLogicOffset, this.topic, this.queueId, expectLogicOffset - currentLogicOffset);
@@ -471,6 +518,11 @@ public class ConsumeQueue {
         return false;
     }
 
+    /**
+     * 将MappedFile之前的数据填空
+     * @param mappedFile MappedFile文件
+     * @param untilWhere 数据截止点
+     */
     private void fillPreBlank(final MappedFile mappedFile, final long untilWhere) {
         ByteBuffer byteBuffer = ByteBuffer.allocate(CQ_STORE_UNIT_SIZE);
         byteBuffer.putLong(0L);
@@ -483,6 +535,12 @@ public class ConsumeQueue {
         }
     }
 
+
+    /**
+     * 转到对应mappedFile文件然后开始读取
+     * @param startIndex
+     * @return
+     */
     public SelectMappedBufferResult getIndexBuffer(final long startIndex) {
         int mappedFileSize = this.mappedFileSize;
         long offset = startIndex * CQ_STORE_UNIT_SIZE;

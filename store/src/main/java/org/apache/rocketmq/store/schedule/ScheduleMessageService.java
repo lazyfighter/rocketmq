@@ -52,6 +52,11 @@ public class ScheduleMessageService extends ConfigManager {
     private static final long DELAY_FOR_A_WHILE = 100L;
     private static final long DELAY_FOR_A_PERIOD = 10000L;
 
+
+    /**
+     * 存储延时级别数据key为级别
+     * value为延时的时间
+     */
     private final ConcurrentMap<Integer /* level */, Long/* delay timeMillis */> delayLevelTable =
         new ConcurrentHashMap<Integer, Long>(32);
 
@@ -72,6 +77,11 @@ public class ScheduleMessageService extends ConfigManager {
         return queueId + 1;
     }
 
+    /**
+     * 这是什么意思   delaylevel是什么意思
+     * @param delayLevel
+     * @return
+     */
     public static int delayLevel2QueueId(final int delayLevel) {
         return delayLevel - 1;
     }

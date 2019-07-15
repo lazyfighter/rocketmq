@@ -69,6 +69,9 @@ public class RemotingCommand {
         }
     }
 
+    /**
+     * 请求命令码
+     */
     private int code;
     private LanguageCode language = LanguageCode.JAVA;
     private int version = 0;
@@ -76,6 +79,11 @@ public class RemotingCommand {
     private int flag = 0;
     private String remark;
     private HashMap<String, String> extFields;
+
+    /**
+     * 请求的header
+     *
+     */
     private transient CommandCustomHeader customHeader;
 
     private SerializeType serializeTypeCurrentRPC = serializeTypeConfigInThisServer;
@@ -85,6 +93,13 @@ public class RemotingCommand {
     protected RemotingCommand() {
     }
 
+
+    /**
+     * 创建远程请求command
+     * @param code 请求命令码
+     * @param customHeader 请求的header
+     * @return
+     */
     public static RemotingCommand createRequestCommand(int code, CommandCustomHeader customHeader) {
         RemotingCommand cmd = new RemotingCommand();
         cmd.setCode(code);
@@ -93,6 +108,11 @@ public class RemotingCommand {
         return cmd;
     }
 
+
+    /**
+     * 设置请求的version
+     * @param cmd
+     */
     private static void setCmdVersion(RemotingCommand cmd) {
         if (configVersion >= 0) {
             cmd.setVersion(configVersion);

@@ -21,19 +21,40 @@ package org.apache.rocketmq.store;
  */
 public class AppendMessageResult {
     // Return code
+    /**
+     * 消息追加结果
+     */
     private AppendMessageStatus status;
     // Where to start writing
+    /**
+     * 消息从哪里开始写入
+     */
     private long wroteOffset;
     // Write Bytes
+    /**
+     * 写了多少
+     */
     private int wroteBytes;
     // Message ID
+    /**
+     * 消息ID
+     */
     private String msgId;
     // Message storage timestamp
+    /**
+     * 消息存储时间戳
+     */
     private long storeTimestamp;
     // Consume queue's offset(step by one)
+    /**
+     * 消息消费队列逻辑偏移量，类似于数组下标
+     */
     private long logicsOffset;
     private long pagecacheRT = 0;
 
+    /**
+     * 消息条数，批量发送消息的时候会用到
+     */
     private int msgNum = 1;
 
     public AppendMessageResult(AppendMessageStatus status) {

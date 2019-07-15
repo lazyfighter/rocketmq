@@ -41,6 +41,7 @@ public class KVConfigManager {
         this.namesrvController = namesrvController;
     }
 
+    // 加载kv config
     public void load() {
         String content = null;
         try {
@@ -87,6 +88,7 @@ public class KVConfigManager {
         this.persist();
     }
 
+    // 持久化到本地
     public void persist() {
         try {
             this.lock.readLock().lockInterruptibly();
@@ -111,6 +113,7 @@ public class KVConfigManager {
 
     }
 
+    // 删除某一项配置
     public void deleteKVConfig(final String namespace, final String key) {
         try {
             this.lock.writeLock().lockInterruptibly();
@@ -131,6 +134,7 @@ public class KVConfigManager {
         this.persist();
     }
 
+    // 序列化某一项namespace数据
     public byte[] getKVListByNamespace(final String namespace) {
         try {
             this.lock.readLock().lockInterruptibly();
@@ -151,6 +155,7 @@ public class KVConfigManager {
         return null;
     }
 
+    // 获取某一项配置
     public String getKVConfig(final String namespace, final String key) {
         try {
             this.lock.readLock().lockInterruptibly();
@@ -169,6 +174,7 @@ public class KVConfigManager {
         return null;
     }
 
+    // 打印configTable
     public void printAllPeriodically() {
         try {
             this.lock.readLock().lockInterruptibly();

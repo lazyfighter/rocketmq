@@ -163,20 +163,39 @@ public class MQClientAPIImpl {
     }
 
     private final RemotingClient remotingClient;
+
+    /**
+     * TODO
+     * 做啥子
+     */
     private final TopAddressing topAddressing;
     private final ClientRemotingProcessor clientRemotingProcessor;
     private String nameSrvAddr = null;
     private ClientConfig clientConfig;
 
+
+    /**
+     *
+     * @param nettyClientConfig netty配置
+     * @param clientRemotingProcessor 处理器
+     * @param rpcHook
+     * @param clientConfig 客户端配置，存储namesrvAddr
+     */
     public MQClientAPIImpl(final NettyClientConfig nettyClientConfig,
         final ClientRemotingProcessor clientRemotingProcessor,
         RPCHook rpcHook, final ClientConfig clientConfig) {
         this.clientConfig = clientConfig;
         topAddressing = new TopAddressing(MixAll.getWSAddr(), clientConfig.getUnitName());
+
+        //创建客户端
         this.remotingClient = new NettyRemotingClient(nettyClientConfig, null);
+        // 处理器
         this.clientRemotingProcessor = clientRemotingProcessor;
 
         this.remotingClient.registerRPCHook(rpcHook);
+
+
+        // 向客户端注册请求处理器
         this.remotingClient.registerProcessor(RequestCode.CHECK_TRANSACTION_STATE, this.clientRemotingProcessor, null);
 
         this.remotingClient.registerProcessor(RequestCode.NOTIFY_CONSUMER_IDS_CHANGED, this.clientRemotingProcessor, null);
@@ -588,6 +607,8 @@ public class MQClientAPIImpl {
         final long timeoutMillis,
         final PullCallback pullCallback
     ) throws RemotingException, InterruptedException {
+
+
         this.remotingClient.invokeAsync(addr, request, timeoutMillis, new InvokeCallback() {
             @Override
             public void operationComplete(ResponseFuture responseFuture) {
@@ -723,11 +744,26 @@ public class MQClientAPIImpl {
         throw new MQBrokerException(response.getCode(), response.getRemark());
     }
 
+
+    /**
+     *
+     * @param addr brokerAddr
+     * @param consumerGroup  消费者组
+     * @param timeoutMillis  超时时间
+     * @return
+     * @throws RemotingConnectException
+     * @throws RemotingSendRequestException
+     * @throws RemotingTimeoutException
+     * @throws MQBrokerException
+     * @throws InterruptedException
+     */
     public List<String> getConsumerIdListByGroup(
         final String addr,
         final String consumerGroup,
         final long timeoutMillis) throws RemotingConnectException, RemotingSendRequestException, RemotingTimeoutException,
         MQBrokerException, InterruptedException {
+
+
         GetConsumerListByGroupRequestHeader requestHeader = new GetConsumerListByGroupRequestHeader();
         requestHeader.setConsumerGroup(consumerGroup);
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_CONSUMER_LIST_BY_GROUP, requestHeader);
@@ -1196,19 +1232,43 @@ public class MQClientAPIImpl {
         return getTopicRouteInfoFromNameServer(topic, timeoutMillis, false);
     }
 
+
+    /**
+     * 根据topic主题从NameServer获取路由数据
+     * @param topic 主题
+     * @param timeoutMillis 超时时间
+     * @return
+     * @throws RemotingException
+     * @throws MQClientException
+     * @throws InterruptedException
+     */
     public TopicRouteData getTopicRouteInfoFromNameServer(final String topic, final long timeoutMillis)
         throws RemotingException, MQClientException, InterruptedException {
 
         return getTopicRouteInfoFromNameServer(topic, timeoutMillis, true);
     }
 
+
+    /**
+     * 根据Topic获取路由信息
+     * @param topic
+     * @param timeoutMillis
+     * @param allowTopicNotExist
+     * @return
+     * @throws MQClientException
+     * @throws InterruptedException
+     * @throws RemotingTimeoutException
+     * @throws RemotingSendRequestException
+     * @throws RemotingConnectException
+     */
     public TopicRouteData getTopicRouteInfoFromNameServer(final String topic, final long timeoutMillis,
         boolean allowTopicNotExist) throws MQClientException, InterruptedException, RemotingTimeoutException, RemotingSendRequestException, RemotingConnectException {
         GetRouteInfoRequestHeader requestHeader = new GetRouteInfoRequestHeader();
         requestHeader.setTopic(topic);
-
+        // 创建请求
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.GET_ROUTEINTO_BY_TOPIC, requestHeader);
 
+        // 远程调用
         RemotingCommand response = this.remotingClient.invokeSync(null, request, timeoutMillis);
         assert response != null;
         switch (response.getCode()) {
@@ -2067,11 +2127,26 @@ public class MQClientAPIImpl {
         throw new MQClientException(response.getCode(), response.getRemark());
     }
 
+
+    /**
+     * 检查broker是否支持sql过滤
+     * @param brokerAddr brokeraddr
+     * @param consumerGroup
+     * @param clientId
+     * @param subscriptionData
+     * @param timeoutMillis
+     * @throws InterruptedException
+     * @throws RemotingTimeoutException
+     * @throws RemotingSendRequestException
+     * @throws RemotingConnectException
+     * @throws MQClientException
+     */
     public void checkClientInBroker(final String brokerAddr, final String consumerGroup,
         final String clientId, final SubscriptionData subscriptionData,
         final long timeoutMillis)
         throws InterruptedException, RemotingTimeoutException, RemotingSendRequestException,
         RemotingConnectException, MQClientException {
+
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.CHECK_CLIENT_CONFIG, null);
 
         CheckClientRequestBody requestBody = new CheckClientRequestBody();
