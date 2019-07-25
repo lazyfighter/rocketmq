@@ -224,6 +224,12 @@ public class ProcessQueue {
         return 0;
     }
 
+
+    /**
+     * 删除消费成功的消息，返回processQueue中的第一个偏移量，也是最小的偏移量
+     * @param msgs
+     * @return
+     */
     public long removeMessage(final List<MessageExt> msgs) {
         long result = -1;
         final long now = System.currentTimeMillis();

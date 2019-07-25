@@ -19,6 +19,10 @@ package org.apache.rocketmq.broker;
 
 import java.io.File;
 
+
+/**
+ * 存储broker的根路径，然后根据跟路径获取各个配置文件的helper
+ */
 public class BrokerPathConfigHelper {
     // 存储Broker的配置文件路径
     private static String brokerConfigPath = System.getProperty("user.home") + File.separator + "store"

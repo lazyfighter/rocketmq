@@ -290,7 +290,6 @@ public abstract class RebalanceImpl {
                     mqAll.addAll(mqSet);
 
 
-                    // TODO 为什么需要排序
                     Collections.sort(mqAll);
                     Collections.sort(cidAll);
 

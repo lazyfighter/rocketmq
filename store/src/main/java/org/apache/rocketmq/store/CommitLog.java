@@ -559,6 +559,12 @@ public class CommitLog {
         return beginTimeInLock;
     }
 
+
+    /**
+     * 往commitLog里面扔消息
+     * @param msg
+     * @return
+     */
     public PutMessageResult putMessage(final MessageExtBrokerInner msg) {
         // Set the storage time 设置存储的时间
         msg.setStoreTimestamp(System.currentTimeMillis());
@@ -670,7 +676,6 @@ public class CommitLog {
         storeStatsService.getSinglePutMessageTopicTimesTotal(msg.getTopic()).incrementAndGet();
         storeStatsService.getSinglePutMessageTopicSizeTotal(topic).addAndGet(result.getWroteBytes());
 
-        //TODO 消息刷盘
         handleDiskFlush(result, putMessageResult, msg);
         handleHA(result, putMessageResult, msg);
 
@@ -1130,6 +1135,7 @@ public class CommitLog {
                 this.requestsWrite.add(request);
             }
             if (hasNotified.compareAndSet(false, true)) {
+
                 waitPoint.countDown(); // notify
             }
         }

@@ -95,6 +95,14 @@ public class RegisterBrokerBody extends RemotingSerializable {
         return null;
     }
 
+
+    /**
+     * 把tcp请求数据转换为RegisterBrokerBody
+     * @param data
+     * @param compressed
+     * @return
+     * @throws IOException
+     */
     public static RegisterBrokerBody decode(byte[] data, boolean compressed) throws IOException {
         if (!compressed) {
             return RegisterBrokerBody.decode(data, RegisterBrokerBody.class);

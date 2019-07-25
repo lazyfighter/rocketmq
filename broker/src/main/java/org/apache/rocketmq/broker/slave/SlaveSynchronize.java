@@ -28,9 +28,17 @@ import org.apache.rocketmq.common.protocol.body.SubscriptionGroupWrapper;
 import org.apache.rocketmq.common.protocol.body.TopicConfigSerializeWrapper;
 import org.apache.rocketmq.store.config.StorePathConfigHelper;
 
+
+/**
+ * TODO 这个类是做什么的
+ */
 public class SlaveSynchronize {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
     private final BrokerController brokerController;
+
+    /**
+     * broker master地址，向nameServer注册topic信息时的返回携带
+     */
     private volatile String masterAddr = null;
 
     public SlaveSynchronize(BrokerController brokerController) {

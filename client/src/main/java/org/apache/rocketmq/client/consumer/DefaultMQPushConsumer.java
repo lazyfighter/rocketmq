@@ -267,7 +267,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
      * If messages are re-consumed more than {@link #maxReconsumeTimes} before success, it's be directed to a deletion
      * queue waiting.
      *
-     * 最大重试次数，如果消息消费次数超过阈值还未成功，将消息转移到一个失败队列，等待被删除
+     * 最大重试次数，如果消息消费次数超过阈值还未成功，将消息转移到一个失败队列，等待被删除 默认为16
      */
     private int maxReconsumeTimes = -1;
 
@@ -281,7 +281,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
     /**
      * Maximum amount of time in minutes a message may block the consuming thread.
      *
-     * 消息消费超时，默认为15分钟
+     * 消息消费超时，默认为15分钟，如果消费事件超过这个时间，则表示消息过时，会从消费者队列移除
      */
     private long consumeTimeout = 15;
 

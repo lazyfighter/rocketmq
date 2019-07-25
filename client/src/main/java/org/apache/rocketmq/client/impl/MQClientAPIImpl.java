@@ -972,6 +972,19 @@ public class MQClientAPIImpl {
         return response.getCode() == ResponseCode.SUCCESS;
     }
 
+
+    /**
+     * 将消息重新发送给broker，以便后续重试
+     * @param addr brokerAddr
+     * @param msg   message
+     * @param consumerGroup 消费者组
+     * @param delayLevel 延迟级别
+     * @param timeoutMillis 超时时间
+     * @param maxConsumeRetryTimes 最大重试次数
+     * @throws RemotingException
+     * @throws MQBrokerException
+     * @throws InterruptedException
+     */
     public void consumerSendMessageBack(
         final String addr,
         final MessageExt msg,
@@ -980,6 +993,7 @@ public class MQClientAPIImpl {
         final long timeoutMillis,
         final int maxConsumeRetryTimes
     ) throws RemotingException, MQBrokerException, InterruptedException {
+
         ConsumerSendMsgBackRequestHeader requestHeader = new ConsumerSendMsgBackRequestHeader();
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.CONSUMER_SEND_MSG_BACK, requestHeader);
 

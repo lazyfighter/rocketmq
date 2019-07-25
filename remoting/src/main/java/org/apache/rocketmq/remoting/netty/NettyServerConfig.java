@@ -22,7 +22,7 @@ public class NettyServerConfig implements Cloneable {
      */
     private int listenPort = 8888;
     /**
-     * netty的业务线程数量
+     * netty的业务线程数量处理连接ssl握手、编码、解码
      */
     private int serverWorkerThreads = 8;
     /**

@@ -53,6 +53,9 @@ public class NamesrvController {
 
     private RemotingServer remotingServer;
 
+    /**
+     * netty channel event listener
+     */
     private BrokerHousekeepingService brokerHousekeepingService;
 
     private ExecutorService remotingExecutor;
@@ -75,10 +78,19 @@ public class NamesrvController {
          * Broker 连接事件处理服务
          */
         this.brokerHousekeepingService = new BrokerHousekeepingService(this);
+
+
+        /**
+         * 存储nameServer所有的配置信息
+         */
         this.configuration = new Configuration(
             log,
             this.namesrvConfig, this.nettyServerConfig
         );
+
+        /**
+         * 设置指定配置的文件的位置
+         */
         this.configuration.setStorePathFromConfig(this.namesrvConfig, "configStorePath");
     }
 
@@ -89,13 +101,29 @@ public class NamesrvController {
          */
         this.kvConfigManager.load();
 
+
+        /**
+         * 将netty需要的线程池准备好
+         */
         this.remotingServer = new NettyRemotingServer(this.nettyServerConfig, this.brokerHousekeepingService);
 
+
+        /**
+         *
+         */
         this.remotingExecutor =
             Executors.newFixedThreadPool(nettyServerConfig.getServerWorkerThreads(), new ThreadFactoryImpl("RemotingExecutorThread_"));
 
+
+        /**
+         * 注册请求处理器
+         */
         this.registerProcessor();
 
+
+        /**
+         * 启动定时任务扫描不存活的broker
+         */
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 
             @Override
@@ -104,6 +132,10 @@ public class NamesrvController {
             }
         }, 5, 10, TimeUnit.SECONDS);
 
+
+        /**
+         * 定时打印kv配置到日志中
+         */
         this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 
             @Override
@@ -154,6 +186,8 @@ public class NamesrvController {
     }
 
     private void registerProcessor() {
+
+        // TODO 此处我理解是否启动控制台
         if (namesrvConfig.isClusterTest()) {
 
             this.remotingServer.registerDefaultProcessor(new ClusterTestRequestProcessor(this, namesrvConfig.getProductEnvName()),

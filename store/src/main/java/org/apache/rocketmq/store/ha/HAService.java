@@ -47,6 +47,9 @@ public class HAService {
 
     private final List<HAConnection> connectionList = new LinkedList<>();
 
+    /**
+     * HaServer端
+     */
     private final AcceptSocketService acceptSocketService;
 
     private final DefaultMessageStore defaultMessageStore;
@@ -56,10 +59,16 @@ public class HAService {
 
     private final GroupTransferService groupTransferService;
 
+
+    /**
+     * HaClient端
+     */
     private final HAClient haClient;
 
     public HAService(final DefaultMessageStore defaultMessageStore) throws IOException {
         this.defaultMessageStore = defaultMessageStore;
+
+        // server端
         this.acceptSocketService =
             new AcceptSocketService(defaultMessageStore.getMessageStoreConfig().getHaListenPort());
         this.groupTransferService = new GroupTransferService();
@@ -155,6 +164,8 @@ public class HAService {
 
     /**
      * Listens to slave connections to create {@link HAConnection}.
+     *
+     * 监听客户端连接实现类
      */
     class AcceptSocketService extends ServiceThread {
         private final SocketAddress socketAddressListen;
@@ -249,6 +260,7 @@ public class HAService {
 
     /**
      * GroupTransferService Service
+     * 主从同步通知实现类
      */
     class GroupTransferService extends ServiceThread {
 

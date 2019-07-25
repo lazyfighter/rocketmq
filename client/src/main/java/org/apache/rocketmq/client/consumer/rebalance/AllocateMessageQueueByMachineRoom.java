@@ -32,11 +32,15 @@ public class AllocateMessageQueueByMachineRoom implements AllocateMessageQueueSt
     public List<MessageQueue> allocate(String consumerGroup, String currentCID, List<MessageQueue> mqAll,
         List<String> cidAll) {
         List<MessageQueue> result = new ArrayList<MessageQueue>();
+
+
         int currentIndex = cidAll.indexOf(currentCID);
         if (currentIndex < 0) {
             return result;
         }
         List<MessageQueue> premqAll = new ArrayList<MessageQueue>();
+
+        // 找到本机房的MessageQueue
         for (MessageQueue mq : mqAll) {
             String[] temp = mq.getBrokerName().split("@");
             if (temp.length == 2 && consumeridcs.contains(temp[0])) {
@@ -46,11 +50,16 @@ public class AllocateMessageQueueByMachineRoom implements AllocateMessageQueueSt
 
         int mod = premqAll.size() / cidAll.size();
         int rem = premqAll.size() % cidAll.size();
+
         int startIndex = mod * currentIndex;
+
         int endIndex = startIndex + mod;
+
+
         for (int i = startIndex; i < endIndex; i++) {
             result.add(mqAll.get(i));
         }
+
         if (rem > currentIndex) {
             result.add(premqAll.get(currentIndex + mod * cidAll.size()));
         }

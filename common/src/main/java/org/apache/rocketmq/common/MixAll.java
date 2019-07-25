@@ -112,6 +112,12 @@ public class MixAll {
         return RETRY_GROUP_TOPIC_PREFIX + consumerGroup;
     }
 
+
+    /**
+     * 判断消费者组是否为系统消费者
+     * @param consumerGroup
+     * @return
+     */
     public static boolean isSysConsumerGroup(final String consumerGroup) {
         return consumerGroup.startsWith(CID_RMQ_SYS_PREFIX);
     }

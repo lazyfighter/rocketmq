@@ -650,6 +650,10 @@ public class MappedFileQueue {
         }
     }
 
+
+    /**
+     * 此处需要mappedFile只是标志了shutdown状态，
+     */
     public void destroy() {
         for (MappedFile mf : this.mappedFiles) {
             mf.destroy(1000 * 3);

@@ -112,7 +112,6 @@ public class DefaultMessageStore implements MessageStore {
     private final HAService haService;
 
     /**
-     * TODO
      * 延时队列相关线程
      */
     private final ScheduleMessageService scheduleMessageService;
@@ -456,9 +455,6 @@ public class DefaultMessageStore implements MessageStore {
             return new PutMessageResult(PutMessageStatus.PROPERTIES_SIZE_EXCEEDED, null);
         }
 
-        /**
-         * TODO 这是做啥子
-         */
         if (this.isOSPageCacheBusy()) {
             return new PutMessageResult(PutMessageStatus.OS_PAGECACHE_BUSY, null);
         }
@@ -535,6 +531,10 @@ public class DefaultMessageStore implements MessageStore {
         return result;
     }
 
+
+    /**
+     * @return
+     */
     @Override
     public boolean isOSPageCacheBusy() {
         long begin = this.getCommitLog().getBeginTimeInLock();
@@ -829,7 +829,15 @@ public class DefaultMessageStore implements MessageStore {
         return 0;
     }
 
+    /**
+     *
+     * @param topic Topic of the message.
+     * @param queueId Queue ID.
+     * @param timestamp Timestamp to look up.
+     * @return
+     */
     public long getOffsetInQueueByTime(String topic, int queueId, long timestamp) {
+        // 根据topic以及queueId获取consumeQueue
         ConsumeQueue logic = this.findConsumeQueue(topic, queueId);
         if (logic != null) {
             return logic.getOffsetInQueueByTime(timestamp);
@@ -1087,6 +1095,12 @@ public class DefaultMessageStore implements MessageStore {
         return this.systemClock.now();
     }
 
+
+    /**
+     * 删除不再使用的topic messagequeu数据
+     * @param topics all valid topics.
+     * @return
+     */
     @Override
     public int cleanUnusedTopic(Set<String> topics) {
         Iterator<Entry<String, ConcurrentMap<Integer, ConsumeQueue>>> it = this.consumeQueueTable.entrySet().iterator();
@@ -1094,7 +1108,9 @@ public class DefaultMessageStore implements MessageStore {
             Entry<String, ConcurrentMap<Integer, ConsumeQueue>> next = it.next();
             String topic = next.getKey();
 
+            // 当消费者订阅了topic但是，broker里面没有topic的时候  你订阅但是我这里面不包含，当删除topic的时候会出现这种情况
             if (!topics.contains(topic) && !topic.equals(ScheduleMessageService.SCHEDULE_TOPIC)) {
+
                 ConcurrentMap<Integer, ConsumeQueue> queueTable = next.getValue();
                 for (ConsumeQueue cq : queueTable.values()) {
                     cq.destroy();
@@ -1103,6 +1119,7 @@ public class DefaultMessageStore implements MessageStore {
                         cq.getQueueId()
                     );
 
+                    // 删除topic对应的consumeQueue的offset数据
                     this.commitLog.removeQueueFromTopicQueueTable(cq.getTopic(), cq.getQueueId());
                 }
                 it.remove();
@@ -1182,6 +1199,7 @@ public class DefaultMessageStore implements MessageStore {
                         int i = 0;
                         for (; i < bufferConsumeQueue.getSize(); i += ConsumeQueue.CQ_STORE_UNIT_SIZE) {
                             long offsetPy = bufferConsumeQueue.getByteBuffer().getLong();
+                            bufferConsumeQueue.getByteBuffer().position(bufferConsumeQueue.getByteBuffer().position() + 12);
                             final ByteBuffer msgIdMemory = ByteBuffer.allocate(MessageDecoder.MSG_ID_LENGTH);
                             String msgId =
                                 MessageDecoder.createMessageId(msgIdMemory, MessageExt.socketAddress2ByteBuffer(storeHost), offsetPy);
@@ -1253,6 +1271,13 @@ public class DefaultMessageStore implements MessageStore {
         this.commitLog.setConfirmOffset(phyOffset);
     }
 
+
+    /**
+     * 根据commitLogOffset以及size拿到消息
+     * @param commitLogOffset
+     * @param size
+     * @return
+     */
     public MessageExt lookMessageByOffset(long commitLogOffset, int size) {
         SelectMappedBufferResult sbr = this.commitLog.getMessage(commitLogOffset, size);
         if (null != sbr) {
@@ -1266,6 +1291,13 @@ public class DefaultMessageStore implements MessageStore {
         return null;
     }
 
+
+    /**
+     * 根据topic以及queueId查找MessageQueue
+     * @param topic
+     * @param queueId
+     * @return
+     */
     public ConsumeQueue findConsumeQueue(String topic, int queueId) {
         ConcurrentMap<Integer, ConsumeQueue> map = consumeQueueTable.get(topic);
         if (null == map) {

@@ -49,7 +49,6 @@ public class AllocateMappedFileService extends ServiceThread {
     }
 
     /**
-     * TODO 如何创建MappedFile的
      * @param nextFilePath
      * @param nextNextFilePath
      * @param fileSize

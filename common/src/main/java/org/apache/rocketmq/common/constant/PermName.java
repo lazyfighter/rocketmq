@@ -20,6 +20,8 @@ public class PermName {
     public static final int PERM_PRIORITY = 0x1 << 3; // 1000
     public static final int PERM_READ = 0x1 << 2; //     0100
     public static final int PERM_WRITE = 0x1 << 1; //    0010
+
+    // TODO 这个属性是做什么的
     public static final int PERM_INHERIT = 0x1 << 0; //  0001
 
     public static String perm2String(final int perm) {
@@ -47,6 +49,11 @@ public class PermName {
         return (perm & PERM_WRITE) == PERM_WRITE;
     }
 
+    /**
+     *
+     * @param perm
+     * @return
+     */
     public static boolean isInherited(final int perm) {
         return (perm & PERM_INHERIT) == PERM_INHERIT;
     }

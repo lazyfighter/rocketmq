@@ -211,7 +211,6 @@ public class MappedFile extends ReferenceResource {
     }
 
     /**
-     * TODO RandomAccessFile
      * @param fileName
      * @param fileSize
      * @throws IOException
@@ -543,6 +542,11 @@ public class MappedFile extends ReferenceResource {
         return true;
     }
 
+    /**
+     * 销毁mappedFile
+     * @param intervalForcibly
+     * @return
+     */
     public boolean destroy(final long intervalForcibly) {
         this.shutdown(intervalForcibly);
 

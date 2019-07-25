@@ -31,6 +31,10 @@ import org.apache.rocketmq.logging.InternalLoggerFactory;
 import org.apache.rocketmq.common.subscription.SubscriptionGroupConfig;
 import org.apache.rocketmq.remoting.protocol.RemotingSerializable;
 
+
+/**
+ * 订阅组信息管理
+ */
 public class SubscriptionGroupManager extends ConfigManager {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
 
@@ -39,7 +43,12 @@ public class SubscriptionGroupManager extends ConfigManager {
      */
     private final ConcurrentMap<String, SubscriptionGroupConfig> subscriptionGroupTable =
         new ConcurrentHashMap<String, SubscriptionGroupConfig>(1024);
+
+    /**
+     * 当前数据版本
+     */
     private final DataVersion dataVersion = new DataVersion();
+
     private transient BrokerController brokerController;
 
     public SubscriptionGroupManager() {
@@ -51,6 +60,10 @@ public class SubscriptionGroupManager extends ConfigManager {
         this.init();
     }
 
+
+    /**
+     * 每个broker启动的时候默认会有一下订阅组的信息
+     */
     private void init() {
         {
             SubscriptionGroupConfig subscriptionGroupConfig = new SubscriptionGroupConfig();
@@ -99,6 +112,10 @@ public class SubscriptionGroupManager extends ConfigManager {
         }
     }
 
+    /**
+     * 增加或者修改订阅组信息
+     * @param config
+     */
     public void updateSubscriptionGroupConfig(final SubscriptionGroupConfig config) {
         SubscriptionGroupConfig old = this.subscriptionGroupTable.put(config.getGroupName(), config);
         if (old != null) {
@@ -112,6 +129,11 @@ public class SubscriptionGroupManager extends ConfigManager {
         this.persist();
     }
 
+
+    /**
+     * 禁用consume，设置订阅的consumeEnable状态
+     * @param groupName
+     */
     public void disableConsume(final String groupName) {
         SubscriptionGroupConfig old = this.subscriptionGroupTable.get(groupName);
         if (old != null) {
@@ -120,6 +142,12 @@ public class SubscriptionGroupManager extends ConfigManager {
         }
     }
 
+
+    /**
+     * 查找订阅组信息，如果没有开是否开启自动创建或者为系统消费者责自动创建
+     * @param group
+     * @return
+     */
     public SubscriptionGroupConfig findSubscriptionGroupConfig(final String group) {
         SubscriptionGroupConfig subscriptionGroupConfig = this.subscriptionGroupTable.get(group);
         if (null == subscriptionGroupConfig) {
@@ -138,6 +166,11 @@ public class SubscriptionGroupManager extends ConfigManager {
         return subscriptionGroupConfig;
     }
 
+
+    /**
+     * 序列化为json
+     * @return
+     */
     @Override
     public String encode() {
         return this.encode(false);
@@ -154,7 +187,7 @@ public class SubscriptionGroupManager extends ConfigManager {
     }
 
     /**
-     * 将持久化本地的数据加载到缓存中
+     * 将json数据加载到缓存中
      * @param jsonString
      */
     @Override
@@ -169,10 +202,20 @@ public class SubscriptionGroupManager extends ConfigManager {
         }
     }
 
+    /**
+     * 序列化为json
+     * @param prettyFormat
+     * @return
+     */
     public String encode(final boolean prettyFormat) {
         return RemotingSerializable.toJson(this, prettyFormat);
     }
 
+
+    /**
+     * 当重启的时候打印从磁盘中加载的数据
+     * @param sgm
+     */
     private void printLoadDataWhenFirstBoot(final SubscriptionGroupManager sgm) {
         Iterator<Entry<String, SubscriptionGroupConfig>> it = sgm.getSubscriptionGroupTable().entrySet().iterator();
         while (it.hasNext()) {
@@ -189,6 +232,11 @@ public class SubscriptionGroupManager extends ConfigManager {
         return dataVersion;
     }
 
+
+    /**
+     * 删除订阅组信息，根据消费者组
+     * @param groupName
+     */
     public void deleteSubscriptionGroupConfig(final String groupName) {
         SubscriptionGroupConfig old = this.subscriptionGroupTable.remove(groupName);
         if (old != null) {

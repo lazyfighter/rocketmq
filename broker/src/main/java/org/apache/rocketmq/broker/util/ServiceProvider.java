@@ -18,6 +18,10 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
+
+/**
+ * SPI 加载器
+ */
 public class ServiceProvider {
 
     private final static Logger LOG = LoggerFactory

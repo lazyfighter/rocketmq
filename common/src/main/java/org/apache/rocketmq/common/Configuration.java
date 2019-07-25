@@ -275,6 +275,12 @@ public class Configuration {
         return stringBuilder.toString();
     }
 
+
+    /**
+     * 将from融合到to中，如果to中没有添加，如果to中有则进行覆盖
+     * @param from
+     * @param to
+     */
     private void merge(Properties from, Properties to) {
         for (Object key : from.keySet()) {
             Object fromObj = from.get(key), toObj = to.get(key);

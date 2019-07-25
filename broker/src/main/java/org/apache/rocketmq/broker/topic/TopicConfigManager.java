@@ -40,11 +40,17 @@ import org.apache.rocketmq.common.protocol.body.KVTable;
 import org.apache.rocketmq.common.protocol.body.TopicConfigSerializeWrapper;
 import org.apache.rocketmq.common.sysflag.TopicSysFlag;
 
+/**
+ * 主题配置管理,这里会有一些默认的topic信息
+ */
 public class TopicConfigManager extends ConfigManager {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
     private static final long LOCK_TIMEOUT_MILLIS = 3000;
     private transient final Lock lockTopicConfigTable = new ReentrantLock();
 
+    /**
+     *
+     */
     private final ConcurrentMap<String, TopicConfig> topicConfigTable =
         new ConcurrentHashMap<String, TopicConfig>(1024);
     private final DataVersion dataVersion = new DataVersion();
@@ -54,6 +60,11 @@ public class TopicConfigManager extends ConfigManager {
     public TopicConfigManager() {
     }
 
+
+    /**
+     * 意味着每个broker中默认包含这些topic数据
+     * @param brokerController
+     */
     public TopicConfigManager(BrokerController brokerController) {
         this.brokerController = brokerController;
         {
@@ -157,6 +168,15 @@ public class TopicConfigManager extends ConfigManager {
         return this.topicConfigTable.get(topic);
     }
 
+    /**
+     * 在broker接受到消息的时候，如果broker不存在topic，则开始进行创建
+     * @param topic
+     * @param defaultTopic
+     * @param remoteAddress
+     * @param clientDefaultTopicQueueNums
+     * @param topicSysFlag
+     * @return
+     */
     public TopicConfig createTopicInSendMessageMethod(final String topic, final String defaultTopic,
         final String remoteAddress, final int clientDefaultTopicQueueNums, final int topicSysFlag) {
         TopicConfig topicConfig = null;
@@ -172,11 +192,14 @@ public class TopicConfigManager extends ConfigManager {
                     TopicConfig defaultTopicConfig = this.topicConfigTable.get(defaultTopic);
                     if (defaultTopicConfig != null) {
                         if (defaultTopic.equals(MixAll.AUTO_CREATE_TOPIC_KEY_TOPIC)) {
+
+                            // 如果没有开启自动创建topic，则将defaultTopic的perm设置为可写可读
                             if (!this.brokerController.getBrokerConfig().isAutoCreateTopicEnable()) {
                                 defaultTopicConfig.setPerm(PermName.PERM_READ | PermName.PERM_WRITE);
                             }
                         }
 
+                        // TODO 这里是什么意思
                         if (PermName.isInherited(defaultTopicConfig.getPerm())) {
                             topicConfig = new TopicConfig(topic);
 
@@ -231,11 +254,20 @@ public class TopicConfigManager extends ConfigManager {
         return topicConfig;
     }
 
+    /**
+     *
+     * @param topic
+     * @param clientDefaultTopicQueueNums
+     * @param perm
+     * @param topicSysFlag
+     * @return
+     */
     public TopicConfig createTopicInSendMessageBackMethod(
         final String topic,
         final int clientDefaultTopicQueueNums,
         final int perm,
         final int topicSysFlag) {
+
         TopicConfig topicConfig = this.topicConfigTable.get(topic);
         if (topicConfig != null)
             return topicConfig;
@@ -268,6 +300,8 @@ public class TopicConfigManager extends ConfigManager {
             log.error("createTopicInSendMessageBackMethod exception", e);
         }
 
+
+        // 如果为新建注册topic信息
         if (createNew) {
             this.brokerController.registerBrokerAll(false, true,true);
         }
@@ -318,6 +352,10 @@ public class TopicConfigManager extends ConfigManager {
         }
     }
 
+    /**
+     * 根据topicConfig更新管理的topic
+     * @param topicConfig
+     */
     public void updateTopicConfig(final TopicConfig topicConfig) {
         TopicConfig old = this.topicConfigTable.put(topicConfig.getTopicName(), topicConfig);
         if (old != null) {
@@ -331,11 +369,17 @@ public class TopicConfigManager extends ConfigManager {
         this.persist();
     }
 
+    /**
+     * 根据nameServer传过来的是否topic是否有序进行更改
+     * @param orderKVTableFromNs
+     */
     public void updateOrderTopicConfig(final KVTable orderKVTableFromNs) {
 
         if (orderKVTableFromNs != null && orderKVTableFromNs.getTable() != null) {
             boolean isChange = false;
             Set<String> orderTopics = orderKVTableFromNs.getTable().keySet();
+
+            // 将原无序的topic更改为有序
             for (String topic : orderTopics) {
                 TopicConfig topicConfig = this.topicConfigTable.get(topic);
                 if (topicConfig != null && !topicConfig.isOrder()) {
@@ -345,6 +389,7 @@ public class TopicConfigManager extends ConfigManager {
                 }
             }
 
+            // 将原有序的topic更改为无序
             for (Map.Entry<String, TopicConfig> entry : this.topicConfigTable.entrySet()) {
                 String topic = entry.getKey();
                 if (!orderTopics.contains(topic)) {
@@ -364,6 +409,11 @@ public class TopicConfigManager extends ConfigManager {
         }
     }
 
+    /**
+     * 判断topic是否为order
+     * @param topic
+     * @return
+     */
     public boolean isOrderTopic(final String topic) {
         TopicConfig topicConfig = this.topicConfigTable.get(topic);
         if (topicConfig == null) {
@@ -373,6 +423,10 @@ public class TopicConfigManager extends ConfigManager {
         }
     }
 
+    /**
+     * 删除topic信息
+     * @param topic
+     */
     public void deleteTopicConfig(final String topic) {
         TopicConfig old = this.topicConfigTable.remove(topic);
         if (old != null) {
@@ -397,7 +451,6 @@ public class TopicConfigManager extends ConfigManager {
     }
 
     /**
-     * TODO 什么时间点序列化到本地的
      * 默认为 /User/liping/store/config/topics.json
      * @return
      */
@@ -424,6 +477,11 @@ public class TopicConfigManager extends ConfigManager {
         }
     }
 
+    /**
+     * 将类信息序列化为json
+     * @param prettyFormat
+     * @return
+     */
     public String encode(final boolean prettyFormat) {
         TopicConfigSerializeWrapper topicConfigSerializeWrapper = new TopicConfigSerializeWrapper();
         topicConfigSerializeWrapper.setTopicConfigTable(this.topicConfigTable);

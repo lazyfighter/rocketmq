@@ -521,6 +521,10 @@ public class MQClientInstance {
         }
     }
 
+
+    /**
+     * 持久化所有的消费者offset数据
+     */
     private void persistAllConsumerOffset() {
         Iterator<Entry<String, MQConsumerInner>> it = this.consumerTable.entrySet().iterator();
         while (it.hasNext()) {
@@ -1043,6 +1047,13 @@ public class MQClientInstance {
         this.unregisterClientWithLock(group, null);
     }
 
+
+    /**
+     * 注册控制台，默认group为group_admin_ext
+     * @param group
+     * @param admin
+     * @return
+     */
     public boolean registerAdminExt(final String group, final MQAdminExtInner admin) {
         if (null == group || null == admin) {
             return false;
@@ -1116,6 +1127,12 @@ public class MQClientInstance {
         return null;
     }
 
+
+    /**
+     * 根据brokerName 获取master的broker地址
+     * @param brokerName
+     * @return
+     */
     public String findBrokerAddressInPublish(final String brokerName) {
         HashMap<Long/* brokerId */, String/* address */> map = this.brokerAddrTable.get(brokerName);
         if (map != null && !map.isEmpty()) {

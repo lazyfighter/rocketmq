@@ -73,12 +73,17 @@ public class ScheduleMessageService extends ConfigManager {
         this.writeMessageStore = defaultMessageStore;
     }
 
+    /**
+     * queueId 转换为delayLevel
+     * @param queueId
+     * @return
+     */
     public static int queueId2DelayLevel(final int queueId) {
         return queueId + 1;
     }
 
     /**
-     * 这是什么意思   delaylevel是什么意思
+     * delayLevel转换为queueId
      * @param delayLevel
      * @return
      */
@@ -111,6 +116,13 @@ public class ScheduleMessageService extends ConfigManager {
         this.offsetTable.put(delayLevel, offset);
     }
 
+
+    /**
+     * 计算调度时间
+     * @param delayLevel 延迟级别
+     * @param storeTimestamp 消息存储时间
+     * @return
+     */
     public long computeDeliverTimestamp(final int delayLevel, final long storeTimestamp) {
         Long time = this.delayLevelTable.get(delayLevel);
         if (time != null) {
@@ -170,6 +182,11 @@ public class ScheduleMessageService extends ConfigManager {
         return this.encode(false);
     }
 
+
+    /**
+     * 将持久化到本地的数据加载到内存中
+     * @return
+     */
     public boolean load() {
         boolean result = super.load();
         result = result && this.parseDelayLevel();
@@ -231,6 +248,10 @@ public class ScheduleMessageService extends ConfigManager {
         return true;
     }
 
+
+    /**
+     * 定时消费的真正执行者
+     */
     class DeliverDelayedMessageTimerTask extends TimerTask {
         private final int delayLevel;
         private final long offset;
@@ -255,12 +276,16 @@ public class ScheduleMessageService extends ConfigManager {
         }
 
         /**
+         * 校验消息调度时间
+         * @param now    当前时间戳
+         * @param deliverTimestamp 计划执行时间戳
          * @return
          */
         private long correctDeliverTimestamp(final long now, final long deliverTimestamp) {
 
             long result = deliverTimestamp;
 
+            //
             long maxTimestamp = now + ScheduleMessageService.this.delayLevelTable.get(this.delayLevel);
             if (deliverTimestamp > maxTimestamp) {
                 result = now;
@@ -288,6 +313,7 @@ public class ScheduleMessageService extends ConfigManager {
                             int sizePy = bufferCQ.getByteBuffer().getInt();
                             long tagsCode = bufferCQ.getByteBuffer().getLong();
 
+                            // TODO 这是干啥子的
                             if (cq.isExtAddr(tagsCode)) {
                                 if (cq.getExt(tagsCode, cqExtUnit)) {
                                     tagsCode = cqExtUnit.getTagsCode();
@@ -381,6 +407,12 @@ public class ScheduleMessageService extends ConfigManager {
                 failScheduleOffset), DELAY_FOR_A_WHILE);
         }
 
+
+        /**
+         * 消息到期转换为真正的消息，恢复topic以及设置重试次数
+         * @param msgExt
+         * @return
+         */
         private MessageExtBrokerInner messageTimeup(MessageExt msgExt) {
             MessageExtBrokerInner msgInner = new MessageExtBrokerInner();
             msgInner.setBody(msgExt.getBody());

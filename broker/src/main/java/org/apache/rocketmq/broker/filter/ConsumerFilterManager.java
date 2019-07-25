@@ -217,7 +217,6 @@ public class ConsumerFilterManager extends ConfigManager {
 
     /**
      * 默认为 /User/liping/store/config/consumerFilter.json
-     * TODO 什么时间点 brokerController为null
      * @return
      */
     @Override
@@ -249,7 +248,6 @@ public class ConsumerFilterManager extends ConfigManager {
                         continue;
                     }
 
-                    // TODO 这是做啥子
                     try {
                         filterData.setCompiledExpression(
                             FilterFactory.INSTANCE.get(filterData.getExpressionType()).compile(filterData.getExpression())

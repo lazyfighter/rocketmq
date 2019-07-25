@@ -109,29 +109,99 @@ public class BrokerController {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
     private static final InternalLogger LOG_PROTECTION = InternalLoggerFactory.getLogger(LoggerName.PROTECTION_LOGGER_NAME);
     private static final InternalLogger LOG_WATER_MARK = InternalLoggerFactory.getLogger(LoggerName.WATER_MARK_LOGGER_NAME);
+
+    /**
+     * 存储broker的配置
+     */
     private final BrokerConfig brokerConfig;
+
+    /**
+     * nettyServer的配置
+     */
     private final NettyServerConfig nettyServerConfig;
+
+    /**
+     * nettyClient的配置
+     */
     private final NettyClientConfig nettyClientConfig;
+
+    /**
+     * 存储CommitLog的配置信息
+     */
     private final MessageStoreConfig messageStoreConfig;
+
+    /**
+     * 存储消费的offset数据，当订阅者为cluster模式的时候，offset数据存储在broker中
+     */
     private final ConsumerOffsetManager consumerOffsetManager;
+
+    /**
+     *
+     */
     private final ConsumerManager consumerManager;
+
+
+    /**
+     * TODO 学习bloomFilter
+     */
     private final ConsumerFilterManager consumerFilterManager;
+
+
+    /**
+     *
+     */
     private final ProducerManager producerManager;
     private final ClientHousekeepingService clientHousekeepingService;
+
+    /**
+     * 拉取消息处理器
+     */
     private final PullMessageProcessor pullMessageProcessor;
     private final PullRequestHoldService pullRequestHoldService;
     private final MessageArrivingListener messageArrivingListener;
+
+    /**
+     *
+     */
     private final Broker2Client broker2Client;
     private final SubscriptionGroupManager subscriptionGroupManager;
     private final ConsumerIdsChangeListener consumerIdsChangeListener;
+
+    /**
+     *
+     */
     private final RebalanceLockManager rebalanceLockManager = new RebalanceLockManager();
+
+    /**
+     * broker对外的网络访问封装
+     */
     private final BrokerOuterAPI brokerOuterAPI;
+
+
     private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryImpl(
         "BrokerControllerScheduledThread"));
+
+    /**
+     *
+     */
     private final SlaveSynchronize slaveSynchronize;
+
+    /**
+     * 消息存储请求队列
+     */
     private final BlockingQueue<Runnable> sendThreadPoolQueue;
+
+    /**
+     * 拉取消息请求队列
+     */
     private final BlockingQueue<Runnable> pullThreadPoolQueue;
+
+    /**
+     * 查询消息请求队列
+     */
     private final BlockingQueue<Runnable> queryThreadPoolQueue;
+
+
     private final BlockingQueue<Runnable> clientManagerThreadPoolQueue;
     private final BlockingQueue<Runnable> heartbeatThreadPoolQueue;
     private final BlockingQueue<Runnable> consumerManagerThreadPoolQueue;
@@ -140,22 +210,55 @@ public class BrokerController {
     private final BrokerStatsManager brokerStatsManager;
     private final List<SendMessageHook> sendMessageHookList = new ArrayList<SendMessageHook>();
     private final List<ConsumeMessageHook> consumeMessageHookList = new ArrayList<ConsumeMessageHook>();
+
+    /**
+     * commitLog 的抽象
+     */
     private MessageStore messageStore;
+
+    /**
+     * broker server
+     */
     private RemotingServer remotingServer;
+
+    /**
+     * broker vip server
+     */
     private RemotingServer fastRemotingServer;
     private TopicConfigManager topicConfigManager;
+
+    /**
+     * 将收到的消息提交到commitLog的线程池 默认 core = max =1
+     */
     private ExecutorService sendMessageExecutor;
+
+    /**
+     * 消费者拉取消息从consumeQueue拉取消息的线程池 默认 core = max = 16 + Runtime.getRuntime().availableProcessors() * 2;
+     */
     private ExecutorService pullMessageExecutor;
+
+    /**
+     * 查询indexQueue的线程池用于客户端查询消息 默认 core = max = 8 + Runtime.getRuntime().availableProcessors()
+     */
     private ExecutorService queryMessageExecutor;
+
     private ExecutorService adminBrokerExecutor;
     private ExecutorService clientManageExecutor;
     private ExecutorService heartbeatExecutor;
     private ExecutorService consumerManageExecutor;
     private ExecutorService endTransactionExecutor;
+
+    /**
+     * 是否每次跟nameServer通信都要修改ha地址
+     */
     private boolean updateMasterHAServerAddrPeriodically = false;
     private BrokerStats brokerStats;
     private InetSocketAddress storeHost;
     private BrokerFastFailure brokerFastFailure;
+
+    /**
+     * 负责存储所有的配置信息
+     */
     private Configuration configuration;
     private FileWatchService fileWatchService;
     private TransactionalMessageCheckService transactionalMessageCheckService;
@@ -480,8 +583,14 @@ public class BrokerController {
                     log.warn("FileWatchService created error, can't load the certificate dynamically");
                 }
             }
+
+            // TODO 事务消息
             initialTransaction();
+
+            // SPI加载ACL权限校验
             initialAcl();
+
+            // SPI加载RpcHook
             initialRpcHooks();
         }
         return result;
@@ -502,6 +611,10 @@ public class BrokerController {
         this.transactionalMessageCheckService = new TransactionalMessageCheckService(this);
     }
 
+
+    /**
+     * 初始化权限校验acl控制
+     */
     private void initialAcl() {
         if (!this.brokerConfig.isAclEnable()) {
             log.info("The broker dose not enable acl");
@@ -902,8 +1015,16 @@ public class BrokerController {
 
     }
 
+
+    /**
+     * 将topic数据注册到nameServer上面
+     * @param topicConfig
+     * @param dataVersion
+     */
     public synchronized void registerIncrementBrokerData(TopicConfig topicConfig, DataVersion dataVersion) {
         TopicConfig registerTopicConfig = topicConfig;
+
+        // 当broker不可读或者不可写的时候，采用broker的状态
         if (!PermName.isWriteable(this.getBrokerConfig().getBrokerPermission())
             || !PermName.isReadable(this.getBrokerConfig().getBrokerPermission())) {
             registerTopicConfig =
@@ -920,11 +1041,22 @@ public class BrokerController {
         doRegisterBrokerAll(true, false, topicConfigSerializeWrapper);
     }
 
+
+    /**
+     * 向nameServer注册所有的topic数据
+     * @param checkOrderConfig
+     * @param oneway
+     * @param forceRegister
+     */
     public synchronized void registerBrokerAll(final boolean checkOrderConfig, boolean oneway, boolean forceRegister) {
+
+        // 获取topicConfig的包装类
         TopicConfigSerializeWrapper topicConfigWrapper = this.getTopicConfigManager().buildTopicConfigSerializeWrapper();
 
+        // 如果当前的broker不可写或者不可读，从新clone一份topicConfig数据将topic的状态改为broker的状态
         if (!PermName.isWriteable(this.getBrokerConfig().getBrokerPermission())
             || !PermName.isReadable(this.getBrokerConfig().getBrokerPermission())) {
+
             ConcurrentHashMap<String, TopicConfig> topicConfigTable = new ConcurrentHashMap<String, TopicConfig>();
             for (TopicConfig topicConfig : topicConfigWrapper.getTopicConfigTable().values()) {
                 TopicConfig tmp =
@@ -940,12 +1072,21 @@ public class BrokerController {
             this.brokerConfig.getBrokerName(),
             this.brokerConfig.getBrokerId(),
             this.brokerConfig.getRegisterBrokerTimeoutMills())) {
+
             doRegisterBrokerAll(checkOrderConfig, oneway, topicConfigWrapper);
         }
     }
 
+
+    /**
+     *
+     * @param checkOrderConfig
+     * @param oneway
+     * @param topicConfigWrapper
+     */
     private void doRegisterBrokerAll(boolean checkOrderConfig, boolean oneway,
         TopicConfigSerializeWrapper topicConfigWrapper) {
+
         List<RegisterBrokerResult> registerBrokerResultList = this.brokerOuterAPI.registerBrokerAll(
             this.brokerConfig.getBrokerClusterName(),
             this.getBrokerAddr(),
@@ -967,6 +1108,8 @@ public class BrokerController {
 
                 this.slaveSynchronize.setMasterAddr(registerBrokerResult.getMasterAddr());
 
+
+                // 更改topic order属性
                 if (checkOrderConfig) {
                     this.getTopicConfigManager().updateOrderTopicConfig(registerBrokerResult.getKvTable());
                 }
