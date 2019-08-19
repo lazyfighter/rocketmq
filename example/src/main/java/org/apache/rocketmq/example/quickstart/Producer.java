@@ -50,25 +50,25 @@ public class Producer {
          */
         producer.setNamesrvAddr("127.0.0.1:9876");
         producer.start();
-
+        System.out.println(System.getProperty("user.home"));
         producer.createTopic("TBW102", "cluster-topic",4);
         for (int i = 0; i < 1000; i++) {
             try {
 
-                /*
-                 * Create a message instance, specifying topic, tag and message body.
-                 */
-                Message msg = new Message("cluster-topic" /* Topic */,
-                    "TagA" /* Tag */,
-                    ("Hello RocketMQ " + i).getBytes(RemotingHelper.DEFAULT_CHARSET) /* Message body */
-                );
-
-                /*
-                 * Call send message to deliver message to one of brokers.
-                 */
-                SendResult sendResult = producer.send(msg);
-
-                System.out.printf("%s%n", sendResult);
+//                /*
+//                 * Create a message instance, specifying topic, tag and message body.
+//                 */
+//                Message msg = new Message("cluster-topic" /* Topic */,
+//                    "TagA" /* Tag */,
+//                    ("Hello RocketMQ " + i).getBytes(RemotingHelper.DEFAULT_CHARSET) /* Message body */
+//                );
+//
+//                /*
+//                 * Call send message to deliver message to one of brokers.
+//                 */
+//                SendResult sendResult = producer.send(msg);
+//
+//                System.out.printf("%s%n", sendResult);
             } catch (Exception e) {
                 e.printStackTrace();
                 Thread.sleep(1000);

@@ -341,6 +341,11 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
         }
     }
 
+
+    /**
+     * 根据获取的nameServer地址更新地址列表
+     * @param addrs
+     */
     @Override
     public void updateNameServerAddressList(List<String> addrs) {
         List<String> old = this.namesrvAddrList.get();

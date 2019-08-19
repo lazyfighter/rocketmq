@@ -587,6 +587,10 @@ public class MappedFileQueue {
         return null;
     }
 
+    /**
+     * 获取第一个MappedFile，如果没有返回空
+     * @return
+     */
     public MappedFile getFirstMappedFile() {
         MappedFile mappedFileFirst = null;
 

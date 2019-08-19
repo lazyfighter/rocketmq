@@ -275,6 +275,9 @@ public class DefaultMessageStore implements MessageStore {
      */
     public void start() throws Exception {
 
+        /**
+         * 使用文件锁确保只启动一次
+         */
         lock = lockFile.getChannel().tryLock(0, 1, false);
         if (lock == null || lock.isShared() || !lock.isValid()) {
             throw new RuntimeException("Lock failed,MQ already started");
@@ -289,7 +292,11 @@ public class DefaultMessageStore implements MessageStore {
              * 3. Calculate the reput offset according to the consume queue;
              * 4. Make sure the fall-behind messages to be dispatched before starting the commitlog, especially when the broker role are automatically changed.
              */
+
+            // 内存中最小的偏移量
             long maxPhysicalPosInLogicQueue = commitLog.getMinOffset();
+
+            // 开始遍历所有的consumeQ看看consumeQueue建立的最大的位置节点
             for (ConcurrentMap<Integer, ConsumeQueue> maps : this.consumeQueueTable.values()) {
                 for (ConsumeQueue logic : maps.values()) {
                     if (logic.getMaxPhysicOffset() > maxPhysicalPosInLogicQueue) {
@@ -297,9 +304,14 @@ public class DefaultMessageStore implements MessageStore {
                     }
                 }
             }
+
+
+            // 如果建立的最大节点<0， 此时为新建的broker
             if (maxPhysicalPosInLogicQueue < 0) {
                 maxPhysicalPosInLogicQueue = 0;
             }
+
+            // 此处需要注意不应该发生这种情况，如果建立的queue的最大偏移量小于commitLog的最小偏移量，说明出现了问题
             if (maxPhysicalPosInLogicQueue < this.commitLog.getMinOffset()) {
                 maxPhysicalPosInLogicQueue = this.commitLog.getMinOffset();
                 /**
@@ -314,6 +326,8 @@ public class DefaultMessageStore implements MessageStore {
             }
             log.info("[SetReputOffset] maxPhysicalPosInLogicQueue={} clMinOffset={} clMaxOffset={} clConfirmedOffset={}",
                 maxPhysicalPosInLogicQueue, this.commitLog.getMinOffset(), this.commitLog.getMaxOffset(), this.commitLog.getConfirmOffset());
+
+            // 设置reputMessageService的偏移量，开始进行从consumeQueue的最大偏移量进行
             this.reputMessageService.setReputFromOffset(maxPhysicalPosInLogicQueue);
             this.reputMessageService.start();
 
@@ -1475,7 +1489,7 @@ public class DefaultMessageStore implements MessageStore {
     }
 
     /**
-     *
+     * 加载本地的consumeQueue数据
      * @return
      */
     private boolean loadConsumeQueue() {

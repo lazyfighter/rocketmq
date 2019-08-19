@@ -278,19 +278,32 @@ public class BrokerController {
         this.nettyClientConfig = nettyClientConfig;
         this.messageStoreConfig = messageStoreConfig;
 
-
-
-        this.consumerOffsetManager = new ConsumerOffsetManager(this);
+        /**
+         * 存储borker涉及到的所有的topic配置信息
+         */
         this.topicConfigManager = new TopicConfigManager(this);
+
+        /**
+         * 存储消费者消费的offset信息
+         */
+        this.consumerOffsetManager = new ConsumerOffsetManager(this);
         this.pullMessageProcessor = new PullMessageProcessor(this);
         this.pullRequestHoldService = new PullRequestHoldService(this);
         this.messageArrivingListener = new NotifyMessageArrivingListener(this.pullRequestHoldService);
         this.consumerIdsChangeListener = new DefaultConsumerIdsChangeListener(this);
         this.consumerManager = new ConsumerManager(this.consumerIdsChangeListener);
+
+        /**
+         * 存储消费者过滤数据
+         */
         this.consumerFilterManager = new ConsumerFilterManager(this);
         this.producerManager = new ProducerManager();
         this.clientHousekeepingService = new ClientHousekeepingService(this);
         this.broker2Client = new Broker2Client(this);
+
+        /**
+         * 存储订阅组信息
+         */
         this.subscriptionGroupManager = new SubscriptionGroupManager(this);
         this.brokerOuterAPI = new BrokerOuterAPI(nettyClientConfig);
         this.filterServerManager = new FilterServerManager(this);
@@ -306,6 +319,9 @@ public class BrokerController {
         this.endTransactionThreadPoolQueue = new LinkedBlockingQueue<Runnable>(this.brokerConfig.getEndTransactionPoolQueueCapacity());
 
         this.brokerStatsManager = new BrokerStatsManager(this.brokerConfig.getBrokerClusterName());
+
+
+
         this.setStoreHost(new InetSocketAddress(this.getBrokerConfig().getBrokerIP1(), this.getNettyServerConfig().getListenPort()));
 
         this.brokerFastFailure = new BrokerFastFailure(this);

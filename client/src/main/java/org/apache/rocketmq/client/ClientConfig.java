@@ -33,7 +33,7 @@ public class ClientConfig {
 
 
     /**
-     * 这是做啥子的
+     * 客户端回调线程数量
      */
     private int clientCallbackExecutorThreads = Runtime.getRuntime().availableProcessors();
     /**
@@ -53,21 +53,33 @@ public class ClientConfig {
      * 定时持久化消费者offset数据
      */
     private int persistConsumerOffsetInterval = 1000 * 5;
+
+    /**
+     * 单元模式
+     */
     private boolean unitMode = false;
     /**
-     * TODO 这个属性做啥子的
+     * 单元名称
      */
     private String unitName;
 
     /**
-     * TODO 这个是做啥子的
+     * 是否启用vip通道，默认启用
      */
     private boolean vipChannelEnabled = Boolean.parseBoolean(System.getProperty(SEND_MESSAGE_WITH_VIP_CHANNEL_PROPERTY, "true"));
 
+    /**
+     * 是否使用tls
+     */
     private boolean useTLS = TlsSystemConfig.tlsEnable;
 
     private LanguageCode language = LanguageCode.JAVA;
 
+
+    /**
+     * 构建clientId ， ip + instanceName + unitName
+     * @return
+     */
     public String buildMQClientId() {
         StringBuilder sb = new StringBuilder();
         sb.append(this.getClientIP());
@@ -98,6 +110,10 @@ public class ClientConfig {
         this.instanceName = instanceName;
     }
 
+
+    /**
+     * 将instanceName更改为pid
+     */
     public void changeInstanceNameToPID() {
         if (this.instanceName.equals("DEFAULT")) {
             this.instanceName = String.valueOf(UtilAll.getPid());

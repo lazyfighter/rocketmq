@@ -49,11 +49,21 @@ public class TopicConfigManager extends ConfigManager {
     private transient final Lock lockTopicConfigTable = new ReentrantLock();
 
     /**
-     *
+     * 存储topic具体配置信息
+     * key: topicName
+     * value: topicConfig
      */
     private final ConcurrentMap<String, TopicConfig> topicConfigTable =
         new ConcurrentHashMap<String, TopicConfig>(1024);
+
+    /**
+     * 数据版本信息
+     */
     private final DataVersion dataVersion = new DataVersion();
+
+    /**
+     * 存储系统主题topicName名称
+     */
     private final Set<String> systemTopicList = new HashSet<String>();
     private transient BrokerController brokerController;
 

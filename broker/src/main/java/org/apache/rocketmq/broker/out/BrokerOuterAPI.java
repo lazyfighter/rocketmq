@@ -60,9 +60,18 @@ import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 
 public class BrokerOuterAPI {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
+
     private final RemotingClient remotingClient;
+
+    /**
+     * http接口获取nameserver地址的
+     */
     private final TopAddressing topAddressing = new TopAddressing(MixAll.getWSAddr());
     private String nameSrvAddr = null;
+
+    /**
+     * 自定义线程池可以获取结果
+     */
     private BrokerFixedThreadPoolExecutor brokerOuterExecutor = new BrokerFixedThreadPoolExecutor(4, 10, 1, TimeUnit.MINUTES,
         new ArrayBlockingQueue<Runnable>(32), new ThreadFactoryImpl("brokerOutApi_thread_", true));
 
@@ -84,6 +93,11 @@ public class BrokerOuterAPI {
         this.brokerOuterExecutor.shutdown();
     }
 
+
+    /**
+     * 获取nameServer地址，根据http接口
+     * @return
+     */
     public String fetchNameServerAddr() {
         try {
             String addrs = this.topAddressing.fetchNSAddr();
@@ -101,6 +115,11 @@ public class BrokerOuterAPI {
         return nameSrvAddr;
     }
 
+
+    /**
+     * 更新nameServer地址
+     * @param addrs
+     */
     public void updateNameServerAddressList(final String addrs) {
         List<String> lst = new ArrayList<String>();
         String[] addrArray = addrs.split(";");
@@ -113,16 +132,16 @@ public class BrokerOuterAPI {
 
     /**
      * 将topic数据注册到nameServer
-     * @param clusterName
-     * @param brokerAddr
-     * @param brokerName
-     * @param brokerId
-     * @param haServerAddr
-     * @param topicConfigWrapper
-     * @param filterServerList
-     * @param oneway
-     * @param timeoutMills
-     * @param compressed
+     * @param clusterName broker集群名称
+     * @param brokerAddr    broker地址
+     * @param brokerName    broker名称
+     * @param brokerId      brokerId broker replica中id=0的为master >0的为slave
+     * @param haServerAddr  ha地址
+     * @param topicConfigWrapper    topic数据
+     * @param filterServerList      filter数据
+     * @param oneway    oneway请求
+     * @param timeoutMills 超时时间
+     * @param compressed    是否压缩
      * @return
      */
     public List<RegisterBrokerResult> registerBrokerAll(
@@ -138,6 +157,7 @@ public class BrokerOuterAPI {
         final boolean compressed) {
 
         final List<RegisterBrokerResult> registerBrokerResultList = Lists.newArrayList();
+        // 获取nameServer地址列表
         List<String> nameServerAddressList = this.remotingClient.getNameServerAddressList();
         if (nameServerAddressList != null && nameServerAddressList.size() > 0) {
 
@@ -155,6 +175,8 @@ public class BrokerOuterAPI {
             final byte[] body = requestBody.encode(compressed);
             final int bodyCrc32 = UtilAll.crc32(body);
             requestHeader.setBodyCrc32(bodyCrc32);
+
+            // 开始向nameServer中发送注册数据
             final CountDownLatch countDownLatch = new CountDownLatch(nameServerAddressList.size());
             for (final String namesrvAddr : nameServerAddressList) {
                 brokerOuterExecutor.execute(new Runnable() {
@@ -185,6 +207,22 @@ public class BrokerOuterAPI {
         return registerBrokerResultList;
     }
 
+
+    /**
+     *
+     * @param namesrvAddr
+     * @param oneway
+     * @param timeoutMills
+     * @param requestHeader
+     * @param body
+     * @return
+     * @throws RemotingCommandException
+     * @throws MQBrokerException
+     * @throws RemotingConnectException
+     * @throws RemotingSendRequestException
+     * @throws RemotingTimeoutException
+     * @throws InterruptedException
+     */
     private RegisterBrokerResult registerBroker(
         final String namesrvAddr,
         final boolean oneway,
@@ -226,6 +264,14 @@ public class BrokerOuterAPI {
         throw new MQBrokerException(response.getCode(), response.getRemark());
     }
 
+
+    /**
+     * 反注册broker
+     * @param clusterName 集群名称
+     * @param brokerAddr    broker地址
+     * @param brokerName    broker名称
+     * @param brokerId  brokerId
+     */
     public void unregisterBrokerAll(
         final String clusterName,
         final String brokerAddr,
@@ -272,6 +318,17 @@ public class BrokerOuterAPI {
         throw new MQBrokerException(response.getCode(), response.getRemark());
     }
 
+
+    /**
+     * 根据数据版本判断是否需要注册
+     * @param clusterName
+     * @param brokerAddr
+     * @param brokerName
+     * @param brokerId
+     * @param topicConfigWrapper
+     * @param timeoutMills
+     * @return
+     */
     public List<Boolean> needRegister(
         final String clusterName,
         final String brokerAddr,
@@ -279,6 +336,8 @@ public class BrokerOuterAPI {
         final long brokerId,
         final TopicConfigSerializeWrapper topicConfigWrapper,
         final int timeoutMills) {
+
+
         final List<Boolean> changedList = new CopyOnWriteArrayList<>();
         List<String> nameServerAddressList = this.remotingClient.getNameServerAddressList();
         if (nameServerAddressList != null && nameServerAddressList.size() > 0) {
@@ -337,6 +396,17 @@ public class BrokerOuterAPI {
         return changedList;
     }
 
+
+    /**
+     * 获取nameServer存储的所有的topic数据
+     * @param addr
+     * @return
+     * @throws RemotingConnectException
+     * @throws RemotingSendRequestException
+     * @throws RemotingTimeoutException
+     * @throws InterruptedException
+     * @throws MQBrokerException
+     */
     public TopicConfigSerializeWrapper getAllTopicConfig(
         final String addr) throws RemotingConnectException, RemotingSendRequestException,
         RemotingTimeoutException, InterruptedException, MQBrokerException {
@@ -355,6 +425,17 @@ public class BrokerOuterAPI {
         throw new MQBrokerException(response.getCode(), response.getRemark());
     }
 
+
+    /**
+     * 获取消费的offset进度
+     * @param addr  broker master的地址
+     * @return
+     * @throws InterruptedException
+     * @throws RemotingTimeoutException
+     * @throws RemotingSendRequestException
+     * @throws RemotingConnectException
+     * @throws MQBrokerException
+     */
     public ConsumerOffsetSerializeWrapper getAllConsumerOffset(
         final String addr) throws InterruptedException, RemotingTimeoutException,
         RemotingSendRequestException, RemotingConnectException, MQBrokerException {
@@ -371,6 +452,8 @@ public class BrokerOuterAPI {
 
         throw new MQBrokerException(response.getCode(), response.getRemark());
     }
+
+
 
     public String getAllDelayOffset(
         final String addr) throws InterruptedException, RemotingTimeoutException, RemotingSendRequestException,

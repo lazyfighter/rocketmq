@@ -26,14 +26,14 @@ import java.util.concurrent.TimeUnit;
 import org.apache.rocketmq.common.ServiceThread;
 import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.logging.InternalLogger;
-import org.apache.rocketmq.logging.InternalLoggerFactory;
 import org.apache.rocketmq.common.message.MessageAccessor;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageDecoder;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.message.MessageExtBatch;
 import org.apache.rocketmq.common.sysflag.MessageSysFlag;
+import org.apache.rocketmq.logging.InternalLogger;
+import org.apache.rocketmq.logging.InternalLoggerFactory;
 import org.apache.rocketmq.store.config.BrokerRole;
 import org.apache.rocketmq.store.config.FlushDiskType;
 import org.apache.rocketmq.store.ha.HAService;
@@ -48,8 +48,16 @@ public class CommitLog {
     protected static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
     // End of file empty MAGIC CODE cbd43194
     protected final static int BLANK_MAGIC_CODE = -875286124;
+
+    /**
+     * 负责管理MappedFile
+     */
     protected final MappedFileQueue mappedFileQueue;
     protected final DefaultMessageStore defaultMessageStore;
+
+    /**
+     * 负责刷盘的服务
+     */
     private final FlushCommitLogService flushCommitLogService;
 
     //If TransientStorePool enabled, we must flush message to FileChannel at fixed periods
@@ -891,6 +899,10 @@ public class CommitLog {
      * 根据offset获取下一个MappedFile的offset
      * @param offset
      * @return
+     *
+     * offset + mappedFileSize 下个文件的offset位置
+     * offset % mappedFileSize 对应MappedFile大小多余的部分
+     * 相减获取下个文件的起始位置
      */
     public long rollNextFile(final long offset) {
         int mappedFileSize = this.defaultMessageStore.getMessageStoreConfig().getMapedFileSizeCommitLog();

@@ -84,6 +84,10 @@ public class SlaveSynchronize {
         }
     }
 
+
+    /**
+     * 同步消费的offset进度
+     */
     private void syncConsumerOffset() {
         String masterAddrBak = this.masterAddr;
         if (masterAddrBak != null && !masterAddrBak.equals(brokerController.getBrokerAddr())) {
@@ -100,6 +104,10 @@ public class SlaveSynchronize {
         }
     }
 
+
+    /**
+     * TODO
+     */
     private void syncDelayOffset() {
         String masterAddrBak = this.masterAddr;
         if (masterAddrBak != null && !masterAddrBak.equals(brokerController.getBrokerAddr())) {
