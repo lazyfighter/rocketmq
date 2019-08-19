@@ -88,7 +88,7 @@ public class IndexFile {
             this.indexHeader.updateByteBuffer();
             this.mappedByteBuffer.force();
             this.mappedFile.release();
-            log.info("flush index file eclipse time(ms) " + (System.currentTimeMillis() - beginTime));
+            log.info("flush index file elapsed time(ms) " + (System.currentTimeMillis() - beginTime));
         }
     }
 

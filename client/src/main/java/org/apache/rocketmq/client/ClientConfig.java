@@ -16,8 +16,13 @@
  */
 package org.apache.rocketmq.client;
 
-import org.apache.rocketmq.common.MixAll;
+import java.util.HashSet;
+import java.util.Set;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.common.UtilAll;
+import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.common.protocol.NamespaceUtil;
+import org.apache.rocketmq.common.utils.NameServerAddressUtils;
 import org.apache.rocketmq.remoting.common.RemotingUtil;
 import org.apache.rocketmq.remoting.netty.TlsSystemConfig;
 import org.apache.rocketmq.remoting.protocol.LanguageCode;
@@ -27,59 +32,33 @@ import org.apache.rocketmq.remoting.protocol.LanguageCode;
  */
 public class ClientConfig {
     public static final String SEND_MESSAGE_WITH_VIP_CHANNEL_PROPERTY = "com.rocketmq.sendMessageWithVIPChannel";
-    private String namesrvAddr = System.getProperty(MixAll.NAMESRV_ADDR_PROPERTY, System.getenv(MixAll.NAMESRV_ADDR_ENV));
+    private String namesrvAddr = NameServerAddressUtils.getNameServerAddresses();
     private String clientIP = RemotingUtil.getLocalAddress();
     private String instanceName = System.getProperty("rocketmq.client.name", "DEFAULT");
-
-
-    /**
-     * 客户端回调线程数量
-     */
     private int clientCallbackExecutorThreads = Runtime.getRuntime().availableProcessors();
+    protected String namespace;
+    protected AccessChannel accessChannel = AccessChannel.LOCAL;
+
     /**
      * Pulling topic information interval from the named server
-     *
-     *
-     * 定时从nameServer更新topicRouteInfo时间，默认为30s
      */
     private int pollNameServerInterval = 1000 * 30;
     /**
      * Heartbeat interval in microseconds with message broker
-     *
-     * 定时发送心跳到broker，默认为30s
      */
     private int heartbeatBrokerInterval = 1000 * 30;
     /**
-     * 定时持久化消费者offset数据
+     * Offset persistent interval for consumer
      */
     private int persistConsumerOffsetInterval = 1000 * 5;
-
-    /**
-     * 单元模式
-     */
     private boolean unitMode = false;
-    /**
-     * 单元名称
-     */
     private String unitName;
+    private boolean vipChannelEnabled = Boolean.parseBoolean(System.getProperty(SEND_MESSAGE_WITH_VIP_CHANNEL_PROPERTY, "false"));
 
-    /**
-     * 是否启用vip通道，默认启用
-     */
-    private boolean vipChannelEnabled = Boolean.parseBoolean(System.getProperty(SEND_MESSAGE_WITH_VIP_CHANNEL_PROPERTY, "true"));
-
-    /**
-     * 是否使用tls
-     */
     private boolean useTLS = TlsSystemConfig.tlsEnable;
 
     private LanguageCode language = LanguageCode.JAVA;
 
-
-    /**
-     * 构建clientId ， ip + instanceName + unitName
-     * @return
-     */
     public String buildMQClientId() {
         StringBuilder sb = new StringBuilder();
         sb.append(this.getClientIP());
@@ -110,16 +89,44 @@ public class ClientConfig {
         this.instanceName = instanceName;
     }
 
-
-    /**
-     * 将instanceName更改为pid
-     */
     public void changeInstanceNameToPID() {
         if (this.instanceName.equals("DEFAULT")) {
             this.instanceName = String.valueOf(UtilAll.getPid());
         }
     }
 
+
+    public String withNamespace(String resource) {
+        return NamespaceUtil.wrapNamespace(this.getNamespace(), resource);
+    }
+
+    public Set<String> withNamespace(Set<String> resourceSet) {
+        Set<String> resourceWithNamespace = new HashSet<String>();
+        for (String resource : resourceSet) {
+            resourceWithNamespace.add(withNamespace(resource));
+        }
+        return resourceWithNamespace;
+    }
+
+    public String withoutNamespace(String resource) {
+        return NamespaceUtil.withoutNamespace(resource, this.getNamespace());
+    }
+
+    public Set<String> withoutNamespace(Set<String> resourceSet) {
+        Set<String> resourceWithoutNamespace = new HashSet<String>();
+        for (String resource : resourceSet) {
+            resourceWithoutNamespace.add(withoutNamespace(resource));
+        }
+        return resourceWithoutNamespace;
+    }
+
+    public MessageQueue queueWithNamespace(MessageQueue queue) {
+        if (StringUtils.isEmpty(this.getNamespace())) {
+            return queue;
+        }
+
+        return new MessageQueue(withNamespace(queue.getTopic()), queue.getBrokerName(), queue.getQueueId());
+    }
     public void resetClientConfig(final ClientConfig cc) {
         this.namesrvAddr = cc.namesrvAddr;
         this.clientIP = cc.clientIP;
@@ -132,6 +139,7 @@ public class ClientConfig {
         this.unitName = cc.unitName;
         this.vipChannelEnabled = cc.vipChannelEnabled;
         this.useTLS = cc.useTLS;
+        this.namespace = cc.namespace;
         this.language = cc.language;
     }
 
@@ -148,14 +156,22 @@ public class ClientConfig {
         cc.unitName = unitName;
         cc.vipChannelEnabled = vipChannelEnabled;
         cc.useTLS = useTLS;
+        cc.namespace = namespace;
         cc.language = language;
         return cc;
     }
 
     public String getNamesrvAddr() {
+        if (StringUtils.isNotEmpty(namesrvAddr) && NameServerAddressUtils.NAMESRV_ENDPOINT_PATTERN.matcher(namesrvAddr.trim()).matches()) {
+            return namesrvAddr.substring(NameServerAddressUtils.ENDPOINT_PREFIX.length());
+        }
         return namesrvAddr;
     }
 
+    /**
+     * Domain name mode access way does not support the delimiter(;), and only one domain name can be set.
+     * @param namesrvAddr name server address
+     */
     public void setNamesrvAddr(String namesrvAddr) {
         this.namesrvAddr = namesrvAddr;
     }
@@ -232,12 +248,37 @@ public class ClientConfig {
         this.language = language;
     }
 
+    public String getNamespace() {
+        if (StringUtils.isNotEmpty(namespace)) {
+            return namespace;
+        }
+
+        if (StringUtils.isNotEmpty(this.namesrvAddr)) {
+            if (NameServerAddressUtils.validateInstanceEndpoint(namesrvAddr)) {
+                return NameServerAddressUtils.parseInstanceIdFromEndpoint(namesrvAddr);
+            }
+        }
+        return namespace;
+    }
+
+    public void setNamespace(String namespace) {
+        this.namespace = namespace;
+    }
+
+    public AccessChannel getAccessChannel() {
+        return this.accessChannel;
+    }
+
+    public void setAccessChannel(AccessChannel accessChannel) {
+        this.accessChannel = accessChannel;
+    }
+
     @Override
     public String toString() {
         return "ClientConfig [namesrvAddr=" + namesrvAddr + ", clientIP=" + clientIP + ", instanceName=" + instanceName
             + ", clientCallbackExecutorThreads=" + clientCallbackExecutorThreads + ", pollNameServerInterval=" + pollNameServerInterval
             + ", heartbeatBrokerInterval=" + heartbeatBrokerInterval + ", persistConsumerOffsetInterval="
             + persistConsumerOffsetInterval + ", unitMode=" + unitMode + ", unitName=" + unitName + ", vipChannelEnabled="
-            + vipChannelEnabled + ", useTLS=" + useTLS + ", language=" + language.name() + "]";
+            + vipChannelEnabled + ", useTLS=" + useTLS + ", language=" + language.name() + ", namespace=" + namespace + "]";
     }
 }
