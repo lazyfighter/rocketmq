@@ -43,6 +43,9 @@ public class TopicValidator {
     private static final Pattern PATTERN = Pattern.compile(VALID_PATTERN_STR);
     private static final int TOPIC_MAX_LENGTH = 127;
 
+    /**
+     * 保存创建好的系统的topic名称
+     */
     private static final Set<String> SYSTEM_TOPIC_SET = new HashSet<String>();
 
     /**

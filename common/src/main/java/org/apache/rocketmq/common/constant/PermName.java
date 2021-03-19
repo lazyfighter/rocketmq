@@ -18,8 +18,18 @@ package org.apache.rocketmq.common.constant;
 
 public class PermName {
     public static final int PERM_PRIORITY = 0x1 << 3;
+    /**
+     * topic 是否可以读
+     */
     public static final int PERM_READ = 0x1 << 2;
+    /**
+     * topic 是否可以写
+     */
     public static final int PERM_WRITE = 0x1 << 1;
+
+    /**
+     * topic 是否可以执行，  即创建topic的时候， 是否可以指定该topic为模板
+     */
     public static final int PERM_INHERIT = 0x1 << 0;
 
     public static String perm2String(final int perm) {
