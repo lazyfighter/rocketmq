@@ -17,30 +17,67 @@
 package org.apache.rocketmq.remoting.netty;
 
 import io.netty.channel.Channel;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.rocketmq.remoting.InvokeCallback;
 import org.apache.rocketmq.remoting.common.SemaphoreReleaseOnlyOnce;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 public class ResponseFuture {
+    /**
+     * 请求唯一ID
+     */
     private final int opaque;
+    /**
+     * 请求服务器链接通道
+     */
     private final Channel processChannel;
+    /**
+     * 请求超时时间
+     */
     private final long timeoutMillis;
+    /**
+     * 回调函数
+     */
     private final InvokeCallback invokeCallback;
+
+    /**
+     * 请求发起时间
+     */
     private final long beginTimestamp = System.currentTimeMillis();
+
+    /**
+     * 协调处理器， 用于同步等待response
+     */
     private final CountDownLatch countDownLatch = new CountDownLatch(1);
 
+    /**
+     * 信号量钩子，用于释放one-way或者async信号量资源， 确保只释放一次
+     */
     private final SemaphoreReleaseOnlyOnce once;
 
+    /**
+     * 执行处理回调函数确保指执行一次
+     */
     private final AtomicBoolean executeCallbackOnlyOnce = new AtomicBoolean(false);
+
+    /**
+     * 具体的返回值
+     */
     private volatile RemotingCommand responseCommand;
+    /**
+     * 请求是否发送成功
+     */
     private volatile boolean sendRequestOK = true;
+
+    /**
+     * 请求发送失败堆栈
+     */
     private volatile Throwable cause;
 
-    public ResponseFuture(Channel channel, int opaque, long timeoutMillis, InvokeCallback invokeCallback,
-        SemaphoreReleaseOnlyOnce once) {
+    public ResponseFuture(Channel channel, int opaque, long timeoutMillis, InvokeCallback invokeCallback, SemaphoreReleaseOnlyOnce once) {
         this.opaque = opaque;
         this.processChannel = channel;
         this.timeoutMillis = timeoutMillis;
@@ -124,13 +161,13 @@ public class ResponseFuture {
     @Override
     public String toString() {
         return "ResponseFuture [responseCommand=" + responseCommand
-            + ", sendRequestOK=" + sendRequestOK
-            + ", cause=" + cause
-            + ", opaque=" + opaque
-            + ", processChannel=" + processChannel
-            + ", timeoutMillis=" + timeoutMillis
-            + ", invokeCallback=" + invokeCallback
-            + ", beginTimestamp=" + beginTimestamp
-            + ", countDownLatch=" + countDownLatch + "]";
+                + ", sendRequestOK=" + sendRequestOK
+                + ", cause=" + cause
+                + ", opaque=" + opaque
+                + ", processChannel=" + processChannel
+                + ", timeoutMillis=" + timeoutMillis
+                + ", invokeCallback=" + invokeCallback
+                + ", beginTimestamp=" + beginTimestamp
+                + ", countDownLatch=" + countDownLatch + "]";
     }
 }

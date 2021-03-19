@@ -32,18 +32,7 @@ import org.apache.rocketmq.logging.InternalLogger;
 import org.apache.rocketmq.logging.InternalLoggerFactory;
 
 public class RemotingCommand {
-    public static final String SERIALIZE_TYPE_PROPERTY = "rocketmq.serialize.type";
-    public static final String SERIALIZE_TYPE_ENV = "ROCKETMQ_SERIALIZE_TYPE";
-    public static final String REMOTING_VERSION_KEY = "rocketmq.remoting.version";
-    private static final InternalLogger log = InternalLoggerFactory.getLogger(RemotingHelper.ROCKETMQ_REMOTING);
-    private static final int RPC_TYPE = 0; // 0, REQUEST_COMMAND
-    private static final int RPC_ONEWAY = 1; // 0, RPC
-    private static final Map<Class<? extends CommandCustomHeader>, Field[]> CLASS_HASH_MAP =
-        new HashMap<Class<? extends CommandCustomHeader>, Field[]>();
-    private static final Map<Class, String> CANONICAL_NAME_CACHE = new HashMap<Class, String>();
-    // 1, Oneway
-    // 1, RESPONSE_COMMAND
-    private static final Map<Field, Boolean> NULLABLE_FIELD_CACHE = new HashMap<Field, Boolean>();
+
     private static final String STRING_CANONICAL_NAME = String.class.getCanonicalName();
     private static final String DOUBLE_CANONICAL_NAME_1 = Double.class.getCanonicalName();
     private static final String DOUBLE_CANONICAL_NAME_2 = double.class.getCanonicalName();
@@ -53,6 +42,21 @@ public class RemotingCommand {
     private static final String LONG_CANONICAL_NAME_2 = long.class.getCanonicalName();
     private static final String BOOLEAN_CANONICAL_NAME_1 = Boolean.class.getCanonicalName();
     private static final String BOOLEAN_CANONICAL_NAME_2 = boolean.class.getCanonicalName();
+
+
+    public static final String SERIALIZE_TYPE_PROPERTY = "rocketmq.serialize.type";
+    public static final String SERIALIZE_TYPE_ENV = "ROCKETMQ_SERIALIZE_TYPE";
+    public static final String REMOTING_VERSION_KEY = "rocketmq.remoting.version";
+    private static final InternalLogger log = InternalLoggerFactory.getLogger(RemotingHelper.ROCKETMQ_REMOTING);
+    private static final int RPC_TYPE = 0; // 0, REQUEST_COMMAND
+    private static final int RPC_ONEWAY = 1; // 0, RPC
+
+    private static final Map<Class<? extends CommandCustomHeader>, Field[]> CLASS_HASH_MAP = new HashMap<>();
+    private static final Map<Class, String> CANONICAL_NAME_CACHE = new HashMap<>();
+    // 1, Oneway
+    // 1, RESPONSE_COMMAND
+    private static final Map<Field, Boolean> NULLABLE_FIELD_CACHE = new HashMap<>();
+
     private static volatile int configVersion = -1;
     private static AtomicInteger requestId = new AtomicInteger(0);
 

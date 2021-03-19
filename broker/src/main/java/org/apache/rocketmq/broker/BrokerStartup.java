@@ -51,6 +51,10 @@ import static org.apache.rocketmq.remoting.netty.TlsSystemConfig.TLS_ENABLE;
 public class BrokerStartup {
     public static Properties properties = null;
     public static CommandLine commandLine = null;
+
+    /**
+     * broker 配置文件位置
+     */
     public static String configFile = null;
     public static InternalLogger log;
 
@@ -108,14 +112,14 @@ public class BrokerStartup {
             }
 
             final BrokerConfig brokerConfig = new BrokerConfig();
+
             final NettyServerConfig nettyServerConfig = new NettyServerConfig();
-            final NettyClientConfig nettyClientConfig = new NettyClientConfig();
-
-            nettyClientConfig.setUseTLS(Boolean.parseBoolean(System.getProperty(TLS_ENABLE,
-                String.valueOf(TlsSystemConfig.tlsMode == TlsMode.ENFORCING))));
             nettyServerConfig.setListenPort(10911);
-            final MessageStoreConfig messageStoreConfig = new MessageStoreConfig();
 
+            final NettyClientConfig nettyClientConfig = new NettyClientConfig();
+            nettyClientConfig.setUseTLS(Boolean.parseBoolean(System.getProperty(TLS_ENABLE, String.valueOf(TlsSystemConfig.tlsMode == TlsMode.ENFORCING))));
+
+            final MessageStoreConfig messageStoreConfig = new MessageStoreConfig();
             if (BrokerRole.SLAVE == messageStoreConfig.getBrokerRole()) {
                 int ratio = messageStoreConfig.getAccessMessageInMemoryMaxRatio() - 10;
                 messageStoreConfig.setAccessMessageInMemoryMaxRatio(ratio);
@@ -147,6 +151,9 @@ public class BrokerStartup {
                 System.exit(-2);
             }
 
+            /**
+             * 判断指定的nameServer地址列表是否正确
+             */
             String namesrvAddr = brokerConfig.getNamesrvAddr();
             if (null != namesrvAddr) {
                 try {
