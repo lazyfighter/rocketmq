@@ -78,10 +78,25 @@ public class BrokerController {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
     private static final InternalLogger LOG_PROTECTION = InternalLoggerFactory.getLogger(LoggerName.PROTECTION_LOGGER_NAME);
     private static final InternalLogger LOG_WATER_MARK = InternalLoggerFactory.getLogger(LoggerName.WATER_MARK_LOGGER_NAME);
+    /**
+     * broker 相关配置
+     */
     private final BrokerConfig brokerConfig;
+    /**
+     * broker 服务器端配置，比如接收consumer相关请求，或者nameServer回调等， 构建服务端配置
+     */
     private final NettyServerConfig nettyServerConfig;
+
+    /**
+     * broker 客户端配置，比如向nameServer发起请求，构建客户端配置
+     */
     private final NettyClientConfig nettyClientConfig;
+
+    /**
+     * broker 消息相关配置， 比如消息存储位置
+     */
     private final MessageStoreConfig messageStoreConfig;
+
     private final ConsumerOffsetManager consumerOffsetManager;
     private final ConsumerManager consumerManager;
     private final ConsumerFilterManager consumerFilterManager;
@@ -140,6 +155,8 @@ public class BrokerController {
         this.nettyServerConfig = nettyServerConfig;
         this.nettyClientConfig = nettyClientConfig;
         this.messageStoreConfig = messageStoreConfig;
+
+
         this.consumerOffsetManager = new ConsumerOffsetManager(this);
         this.topicConfigManager = new TopicConfigManager(this);
         this.pullMessageProcessor = new PullMessageProcessor(this);
