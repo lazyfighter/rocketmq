@@ -59,6 +59,10 @@ public class TopicConfigManager extends ConfigManager {
      * 数据版本
      */
     private final DataVersion dataVersion = new DataVersion();
+
+    /**
+     * broker 控制器
+     */
     private transient BrokerController brokerController;
 
     public TopicConfigManager() {

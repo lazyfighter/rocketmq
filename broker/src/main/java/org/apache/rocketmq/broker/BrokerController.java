@@ -97,21 +97,50 @@ public class BrokerController {
      */
     private final MessageStoreConfig messageStoreConfig;
 
+    /**
+     * 存储所有消费者的消费偏移量
+     */
     private final ConsumerOffsetManager consumerOffsetManager;
+
+    /**
+     * 存储所有消费者配置信息
+     */
     private final ConsumerManager consumerManager;
+
+    /**
+     * 存储所有消费者配置的过滤表达式信息
+     */
     private final ConsumerFilterManager consumerFilterManager;
+    /**
+     * 存储所有生产者的配置信息
+     */
     private final ProducerManager producerManager;
+
+    /**
+     * 定时扫描生产者、消费者、过滤服务器的存活信息
+     */
     private final ClientHousekeepingService clientHousekeepingService;
+
+    /**
+     * 处理拉取消息的processor
+     */
     private final PullMessageProcessor pullMessageProcessor;
+
+    /**
+     *
+     */
     private final PullRequestHoldService pullRequestHoldService;
+
+    /**
+     * 新消息到达监听器
+     */
     private final MessageArrivingListener messageArrivingListener;
     private final Broker2Client broker2Client;
     private final SubscriptionGroupManager subscriptionGroupManager;
     private final ConsumerIdsChangeListener consumerIdsChangeListener;
     private final RebalanceLockManager rebalanceLockManager = new RebalanceLockManager();
     private final BrokerOuterAPI brokerOuterAPI;
-    private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryImpl(
-            "BrokerControllerScheduledThread"));
+    private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryImpl("BrokerControllerScheduledThread"));
     private final SlaveSynchronize slaveSynchronize;
     private final BlockingQueue<Runnable> sendThreadPoolQueue;
     private final BlockingQueue<Runnable> pullThreadPoolQueue;
@@ -128,6 +157,9 @@ public class BrokerController {
     private MessageStore messageStore;
     private RemotingServer remotingServer;
     private RemotingServer fastRemotingServer;
+    /**
+     * 消息队列所有的配置信息
+     */
     private TopicConfigManager topicConfigManager;
     private ExecutorService sendMessageExecutor;
     private ExecutorService pullMessageExecutor;
@@ -143,6 +175,9 @@ public class BrokerController {
     private InetSocketAddress storeHost;
     private BrokerFastFailure brokerFastFailure;
     private Configuration configuration;
+    /**
+     * 文件监听服务， 用于监听TLS配置文件
+     */
     private FileWatchService fileWatchService;
     private TransactionalMessageCheckService transactionalMessageCheckService;
     private TransactionalMessageService transactionalMessageService;
@@ -219,9 +254,8 @@ public class BrokerController {
 
         if (result) {
             try {
-                this.messageStore =
-                        new DefaultMessageStore(this.messageStoreConfig, this.brokerStatsManager, this.messageArrivingListener,
-                                this.brokerConfig);
+                this.messageStore = new DefaultMessageStore(this.messageStoreConfig, this.brokerStatsManager, this.messageArrivingListener,
+                        this.brokerConfig);
                 if (messageStoreConfig.isEnableDLegerCommitLog()) {
                     DLedgerRoleChangeHandler roleChangeHandler = new DLedgerRoleChangeHandler(this, (DefaultMessageStore) messageStore);
                     ((DLedgerCommitLog) ((DefaultMessageStore) messageStore).getCommitLog()).getdLedgerServer().getdLedgerLeaderElector().addRoleChangeHandler(roleChangeHandler);
@@ -312,70 +346,51 @@ public class BrokerController {
 
             final long initialDelay = UtilAll.computeNextMorningTimeMillis() - System.currentTimeMillis();
             final long period = 1000 * 60 * 60 * 24;
-            this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        BrokerController.this.getBrokerStats().record();
-                    } catch (Throwable e) {
-                        log.error("schedule record error.", e);
-                    }
+            this.scheduledExecutorService.scheduleAtFixedRate(() -> {
+                try {
+                    BrokerController.this.getBrokerStats().record();
+                } catch (Throwable e) {
+                    log.error("schedule record error.", e);
                 }
             }, initialDelay, period, TimeUnit.MILLISECONDS);
 
-            this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        BrokerController.this.consumerOffsetManager.persist();
-                    } catch (Throwable e) {
-                        log.error("schedule persist consumerOffset error.", e);
-                    }
+            this.scheduledExecutorService.scheduleAtFixedRate(() -> {
+                try {
+                    BrokerController.this.consumerOffsetManager.persist();
+                } catch (Throwable e) {
+                    log.error("schedule persist consumerOffset error.", e);
                 }
             }, 1000 * 10, this.brokerConfig.getFlushConsumerOffsetInterval(), TimeUnit.MILLISECONDS);
 
-            this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        BrokerController.this.consumerFilterManager.persist();
-                    } catch (Throwable e) {
-                        log.error("schedule persist consumer filter error.", e);
-                    }
+            this.scheduledExecutorService.scheduleAtFixedRate(() -> {
+                try {
+                    BrokerController.this.consumerFilterManager.persist();
+                } catch (Throwable e) {
+                    log.error("schedule persist consumer filter error.", e);
                 }
             }, 1000 * 10, 1000 * 10, TimeUnit.MILLISECONDS);
 
-            this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        BrokerController.this.protectBroker();
-                    } catch (Throwable e) {
-                        log.error("protectBroker error.", e);
-                    }
+            this.scheduledExecutorService.scheduleAtFixedRate(() -> {
+                try {
+                    BrokerController.this.protectBroker();
+                } catch (Throwable e) {
+                    log.error("protectBroker error.", e);
                 }
             }, 3, 3, TimeUnit.MINUTES);
 
-            this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        BrokerController.this.printWaterMark();
-                    } catch (Throwable e) {
-                        log.error("printWaterMark error.", e);
-                    }
+            this.scheduledExecutorService.scheduleAtFixedRate(() -> {
+                try {
+                    BrokerController.this.printWaterMark();
+                } catch (Throwable e) {
+                    log.error("printWaterMark error.", e);
                 }
             }, 10, 1, TimeUnit.SECONDS);
 
-            this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
-
-                @Override
-                public void run() {
-                    try {
-                        log.info("dispatch behind commit log {} bytes", BrokerController.this.getMessageStore().dispatchBehindBytes());
-                    } catch (Throwable e) {
-                        log.error("schedule dispatchBehindBytes error.", e);
-                    }
+            this.scheduledExecutorService.scheduleAtFixedRate(() -> {
+                try {
+                    log.info("dispatch behind commit log {} bytes", BrokerController.this.getMessageStore().dispatchBehindBytes());
+                } catch (Throwable e) {
+                    log.error("schedule dispatchBehindBytes error.", e);
                 }
             }, 1000 * 10, 1000 * 60, TimeUnit.MILLISECONDS);
 
@@ -383,15 +398,11 @@ public class BrokerController {
                 this.brokerOuterAPI.updateNameServerAddressList(this.brokerConfig.getNamesrvAddr());
                 log.info("Set user specified name server address: {}", this.brokerConfig.getNamesrvAddr());
             } else if (this.brokerConfig.isFetchNamesrvAddrByAddressServer()) {
-                this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        try {
-                            BrokerController.this.brokerOuterAPI.fetchNameServerAddr();
-                        } catch (Throwable e) {
-                            log.error("ScheduledTask fetchNameServerAddr exception", e);
-                        }
+                this.scheduledExecutorService.scheduleAtFixedRate(() -> {
+                    try {
+                        BrokerController.this.brokerOuterAPI.fetchNameServerAddr();
+                    } catch (Throwable e) {
+                        log.error("ScheduledTask fetchNameServerAddr exception", e);
                     }
                 }, 1000 * 10, 1000 * 60 * 2, TimeUnit.MILLISECONDS);
             }
@@ -405,14 +416,11 @@ public class BrokerController {
                         this.updateMasterHAServerAddrPeriodically = true;
                     }
                 } else {
-                    this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                BrokerController.this.printMasterAndSlaveDiff();
-                            } catch (Throwable e) {
-                                log.error("schedule printMasterAndSlaveDiff error.", e);
-                            }
+                    this.scheduledExecutorService.scheduleAtFixedRate(() -> {
+                        try {
+                            BrokerController.this.printMasterAndSlaveDiff();
+                        } catch (Throwable e) {
+                            log.error("schedule printMasterAndSlaveDiff error.", e);
                         }
                     }, 1000 * 10, 1000 * 60, TimeUnit.MILLISECONDS);
                 }

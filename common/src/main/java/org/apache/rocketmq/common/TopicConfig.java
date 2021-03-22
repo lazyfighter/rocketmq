@@ -18,16 +18,50 @@ package org.apache.rocketmq.common;
 
 import org.apache.rocketmq.common.constant.PermName;
 
+/**
+ * 消息队列的相关配置
+ */
 public class TopicConfig {
     private static final String SEPARATOR = " ";
+    /**
+     * 默认读的queue队列数量
+     */
     public static int defaultReadQueueNums = 16;
+    /**
+     * 默认写的queue队列数量
+     */
     public static int defaultWriteQueueNums = 16;
+    /**
+     * 队列名称
+     */
     private String topicName;
+
+    /**
+     * 实际读队列数量
+     */
     private int readQueueNums = defaultReadQueueNums;
+    /**
+     * 实际写队列数量
+     */
     private int writeQueueNums = defaultWriteQueueNums;
+    /**
+     * 队列权限， 默认可读可写
+     */
     private int perm = PermName.PERM_READ | PermName.PERM_WRITE;
+
+    /**
+     * 队列过滤消息类型， 默认是单个tag
+     */
     private TopicFilterType topicFilterType = TopicFilterType.SINGLE_TAG;
+
+    /**
+     * 是否是系统消息
+     */
     private int topicSysFlag = 0;
+
+    /**
+     * 队列消息是否是有序的
+     */
     private boolean order = false;
 
     public TopicConfig() {
@@ -61,7 +95,7 @@ public class TopicConfig {
 
     public boolean decode(final String in) {
         String[] strs = in.split(SEPARATOR);
-        if (strs != null && strs.length == 5) {
+        if (strs.length == 5) {
             this.topicName = strs[0];
 
             this.readQueueNums = Integer.parseInt(strs[1]);
@@ -174,8 +208,8 @@ public class TopicConfig {
     @Override
     public String toString() {
         return "TopicConfig [topicName=" + topicName + ", readQueueNums=" + readQueueNums
-            + ", writeQueueNums=" + writeQueueNums + ", perm=" + PermName.perm2String(perm)
-            + ", topicFilterType=" + topicFilterType + ", topicSysFlag=" + topicSysFlag + ", order="
-            + order + "]";
+                + ", writeQueueNums=" + writeQueueNums + ", perm=" + PermName.perm2String(perm)
+                + ", topicFilterType=" + topicFilterType + ", topicSysFlag=" + topicSysFlag + ", order="
+                + order + "]";
     }
 }
