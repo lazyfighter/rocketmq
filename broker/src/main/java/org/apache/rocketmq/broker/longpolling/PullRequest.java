@@ -26,6 +26,9 @@ public class PullRequest {
     private final Channel clientChannel;
     private final long timeoutMillis;
     private final long suspendTimestamp;
+    /**
+     * 从哪个偏移量开始拉取消息
+     */
     private final long pullFromThisOffset;
     private final SubscriptionData subscriptionData;
     private final MessageFilter messageFilter;

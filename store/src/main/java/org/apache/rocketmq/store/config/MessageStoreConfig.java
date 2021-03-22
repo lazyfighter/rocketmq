@@ -16,19 +16,87 @@
  */
 package org.apache.rocketmq.store.config;
 
-import java.io.File;
 import org.apache.rocketmq.common.annotation.ImportantField;
 import org.apache.rocketmq.store.ConsumeQueue;
 
+import java.io.File;
+
+/**
+ * 消息存储配置
+ */
 public class MessageStoreConfig {
-    //The root directory in which the log data is kept
+    /**
+     * commitLog 存储父路径
+     */
     @ImportantField
     private String storePathRootDir = System.getProperty("user.home") + File.separator + "store";
 
-    //The directory in which the commitlog is kept
+    /**
+     * commitLog 存储的路径
+     */
     @ImportantField
-    private String storePathCommitLog = System.getProperty("user.home") + File.separator + "store"
-        + File.separator + "commitlog";
+    private String storePathCommitLog = System.getProperty("user.home") + File.separator + "store" + File.separator + "commitlog";
+
+    /**
+     * commitLog 刷盘间隔时间 默认500ms
+     */
+    @ImportantField
+    private int flushIntervalCommitLog = 500;
+
+    // Only used if TransientStorePool enabled
+    // flush data to FileChannel
+    @ImportantField
+    private int commitIntervalCommitLog = 200;
+
+    /**
+     * commitLog保存多长时间， 默认72小时
+     */
+    @ImportantField
+    private int fileReservedTime = 72;
+
+    // Whether schedule flush,default is real-time
+    @ImportantField
+    private boolean flushCommitLogTimed = false;
+
+    /**
+     * 定时任务，几点删除过期的文件
+     */
+    @ImportantField
+    private String deleteWhen = "04";
+
+    @ImportantField
+    private int maxTransferBytesOnMessageInMemory = 1024 * 256;
+    @ImportantField
+    private int maxTransferCountOnMessageInMemory = 32;
+    @ImportantField
+    private int maxTransferBytesOnMessageInDisk = 1024 * 64;
+    @ImportantField
+    private int maxTransferCountOnMessageInDisk = 8;
+    @ImportantField
+    private int accessMessageInMemoryMaxRatio = 40;
+    /**
+     * 是否启用消息索引
+     */
+    @ImportantField
+    private boolean messageIndexEnable = true;
+    @ImportantField
+    private boolean messageIndexSafe = false;
+    @ImportantField
+    private String haMasterAddress = null;
+
+    @ImportantField
+    private BrokerRole brokerRole = BrokerRole.ASYNC_MASTER;
+    /**
+     * 刷盘方式， 默认是异步刷盘
+     */
+    @ImportantField
+    private FlushDiskType flushDiskType = FlushDiskType.ASYNC_FLUSH;
+
+    @ImportantField
+    private boolean cleanFileForciblyEnable = true;
+
+    @ImportantField
+    private boolean transientStorePoolEnable = false;
 
     // CommitLog file size,default is 1G
     private int mappedFileSizeCommitLog = 1024 * 1024 * 1024;
@@ -42,15 +110,6 @@ public class MessageStoreConfig {
     // this will be set by pipe of calculate filter bit map.
     private int bitMapLengthConsumeQueueExt = 64;
 
-    // CommitLog flush interval
-    // flush data to disk
-    @ImportantField
-    private int flushIntervalCommitLog = 500;
-
-    // Only used if TransientStorePool enabled
-    // flush data to FileChannel
-    @ImportantField
-    private int commitIntervalCommitLog = 200;
 
     /**
      * introduced since 4.0.x. Determine whether to use mutex reentrantLock when putting message.<br/>
@@ -58,9 +117,7 @@ public class MessageStoreConfig {
      */
     private boolean useReentrantLockWhenPutMessage = false;
 
-    // Whether schedule flush,default is real-time
-    @ImportantField
-    private boolean flushCommitLogTimed = false;
+
     // ConsumeQueue flush interval
     private int flushIntervalConsumeQueue = 1000;
     // Resource reclaim interval
@@ -71,13 +128,9 @@ public class MessageStoreConfig {
     private int deleteConsumeQueueFilesInterval = 100;
     private int destroyMapedFileIntervalForcibly = 1000 * 120;
     private int redeleteHangedFileInterval = 1000 * 120;
-    // When to delete,default is at 4 am
-    @ImportantField
-    private String deleteWhen = "04";
+
     private int diskMaxUsedSpaceRatio = 75;
-    // The number of hours to keep a log file before deleting it (in hours)
-    @ImportantField
-    private int fileReservedTime = 72;
+
     // Flow control for ConsumeQueue
     private int putMsgIndexHightWater = 600000;
     // The maximum size of message,default is 4M
@@ -97,39 +150,22 @@ public class MessageStoreConfig {
     private int flushCommitLogThoroughInterval = 1000 * 10;
     private int commitCommitLogThoroughInterval = 200;
     private int flushConsumeQueueThoroughInterval = 1000 * 60;
-    @ImportantField
-    private int maxTransferBytesOnMessageInMemory = 1024 * 256;
-    @ImportantField
-    private int maxTransferCountOnMessageInMemory = 32;
-    @ImportantField
-    private int maxTransferBytesOnMessageInDisk = 1024 * 64;
-    @ImportantField
-    private int maxTransferCountOnMessageInDisk = 8;
-    @ImportantField
-    private int accessMessageInMemoryMaxRatio = 40;
-    @ImportantField
-    private boolean messageIndexEnable = true;
+
     private int maxHashSlotNum = 5000000;
     private int maxIndexNum = 5000000 * 4;
     private int maxMsgsNumBatch = 64;
-    @ImportantField
-    private boolean messageIndexSafe = false;
+
     private int haListenPort = 10912;
     private int haSendHeartbeatInterval = 1000 * 5;
     private int haHousekeepingInterval = 1000 * 20;
     private int haTransferBatchSize = 1024 * 32;
-    @ImportantField
-    private String haMasterAddress = null;
+
     private int haSlaveFallbehindMax = 1024 * 1024 * 256;
-    @ImportantField
-    private BrokerRole brokerRole = BrokerRole.ASYNC_MASTER;
-    @ImportantField
-    private FlushDiskType flushDiskType = FlushDiskType.ASYNC_FLUSH;
+
     private int syncFlushTimeout = 1000 * 5;
     private String messageDelayLevel = "1s 5s 10s 30s 1m 2m 3m 4m 5m 6m 7m 8m 9m 10m 20m 30m 1h 2h";
     private long flushDelayOffsetInterval = 1000 * 10;
-    @ImportantField
-    private boolean cleanFileForciblyEnable = true;
+
     private boolean warmMapedFileEnable = false;
     private boolean offsetCheckInSlave = false;
     private boolean debugLockEnable = false;
@@ -138,8 +174,7 @@ public class MessageStoreConfig {
     private long osPageCacheBusyTimeOutMills = 1000;
     private int defaultQueryMaxNum = 32;
 
-    @ImportantField
-    private boolean transientStorePoolEnable = false;
+
     private int transientStorePoolSize = 5;
     private boolean fastFailIfNoBufferInStorePool = false;
 
@@ -616,7 +651,7 @@ public class MessageStoreConfig {
      */
     public boolean isTransientStorePoolEnable() {
         return transientStorePoolEnable && FlushDiskType.ASYNC_FLUSH == getFlushDiskType()
-            && BrokerRole.SLAVE != getBrokerRole();
+                && BrokerRole.SLAVE != getBrokerRole();
     }
 
     public void setTransientStorePoolEnable(final boolean transientStorePoolEnable) {

@@ -127,7 +127,7 @@ public class BrokerController {
     private final PullMessageProcessor pullMessageProcessor;
 
     /**
-     *
+     * 保存pullRequest， 用来完成long-polling
      */
     private final PullRequestHoldService pullRequestHoldService;
 
@@ -135,9 +135,25 @@ public class BrokerController {
      * 新消息到达监听器
      */
     private final MessageArrivingListener messageArrivingListener;
+
+    /**
+     *
+     */
     private final Broker2Client broker2Client;
+
+    /**
+     *
+     */
     private final SubscriptionGroupManager subscriptionGroupManager;
+
+    /**
+     *
+     */
     private final ConsumerIdsChangeListener consumerIdsChangeListener;
+
+    /**
+     *
+     */
     private final RebalanceLockManager rebalanceLockManager = new RebalanceLockManager();
     /**
      * broker 与nameServer交互client
@@ -148,6 +164,8 @@ public class BrokerController {
      * broker slave 同步协调器
      */
     private final SlaveSynchronize slaveSynchronize;
+
+
     private final BlockingQueue<Runnable> sendThreadPoolQueue;
     private final BlockingQueue<Runnable> pullThreadPoolQueue;
     private final BlockingQueue<Runnable> replyThreadPoolQueue;
@@ -173,6 +191,7 @@ public class BrokerController {
      * 消息队列所有的配置信息
      */
     private TopicConfigManager topicConfigManager;
+
     private ExecutorService sendMessageExecutor;
     private ExecutorService pullMessageExecutor;
     private ExecutorService replyMessageExecutor;
@@ -182,6 +201,8 @@ public class BrokerController {
     private ExecutorService heartbeatExecutor;
     private ExecutorService consumerManageExecutor;
     private ExecutorService endTransactionExecutor;
+
+
     private boolean updateMasterHAServerAddrPeriodically = false;
     private BrokerStats brokerStats;
     private InetSocketAddress storeHost;
@@ -196,6 +217,8 @@ public class BrokerController {
     private AbstractTransactionalMessageCheckListener transactionalMessageCheckListener;
     private Future<?> slaveSyncFuture;
     private Map<Class, AccessValidator> accessValidatorMap = new HashMap<>();
+
+
 
     public BrokerController(final BrokerConfig brokerConfig, final NettyServerConfig nettyServerConfig, final NettyClientConfig nettyClientConfig, final MessageStoreConfig messageStoreConfig) {
         this.brokerConfig = brokerConfig;
@@ -339,7 +362,7 @@ public class BrokerController {
                     new ThreadFactoryImpl("QueryMessageThread_"));
 
             this.adminBrokerExecutor = Executors.newFixedThreadPool(this.brokerConfig.getAdminBrokerThreadPoolNums(), new ThreadFactoryImpl(
-                            "AdminBrokerThread_"));
+                    "AdminBrokerThread_"));
 
             this.clientManageExecutor = new ThreadPoolExecutor(
                     this.brokerConfig.getClientManageThreadPoolNums(),
