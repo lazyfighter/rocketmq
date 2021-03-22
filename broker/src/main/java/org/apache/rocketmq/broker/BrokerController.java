@@ -139,8 +139,14 @@ public class BrokerController {
     private final SubscriptionGroupManager subscriptionGroupManager;
     private final ConsumerIdsChangeListener consumerIdsChangeListener;
     private final RebalanceLockManager rebalanceLockManager = new RebalanceLockManager();
+    /**
+     * broker 与nameServer交互client
+     */
     private final BrokerOuterAPI brokerOuterAPI;
     private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryImpl("BrokerControllerScheduledThread"));
+    /**
+     * broker slave 同步协调器
+     */
     private final SlaveSynchronize slaveSynchronize;
     private final BlockingQueue<Runnable> sendThreadPoolQueue;
     private final BlockingQueue<Runnable> pullThreadPoolQueue;
@@ -151,9 +157,15 @@ public class BrokerController {
     private final BlockingQueue<Runnable> consumerManagerThreadPoolQueue;
     private final BlockingQueue<Runnable> endTransactionThreadPoolQueue;
     private final FilterServerManager filterServerManager;
+    /**
+     * broker 服务打点
+     */
     private final BrokerStatsManager brokerStatsManager;
     private final List<SendMessageHook> sendMessageHookList = new ArrayList<SendMessageHook>();
     private final List<ConsumeMessageHook> consumeMessageHookList = new ArrayList<ConsumeMessageHook>();
+    /**
+     * 消息存储器
+     */
     private MessageStore messageStore;
     private RemotingServer remotingServer;
     private RemotingServer fastRemotingServer;
@@ -246,16 +258,32 @@ public class BrokerController {
     }
 
     public boolean initialize() throws CloneNotSupportedException {
+        /**
+         * 从磁盘上恢复broker存储的消息的相关配置
+         */
         boolean result = this.topicConfigManager.load();
 
+        /**
+         * 从磁盘上恢复broker存储的消费者的偏移量信息
+         */
         result = result && this.consumerOffsetManager.load();
+
+        /**
+         * 从磁盘上恢复broker存储的消费者的配置信息
+         */
         result = result && this.subscriptionGroupManager.load();
+
+        /**
+         * 从磁盘上恢复broker存储的消费者表达式过滤配置信息
+         */
         result = result && this.consumerFilterManager.load();
 
         if (result) {
             try {
-                this.messageStore = new DefaultMessageStore(this.messageStoreConfig, this.brokerStatsManager, this.messageArrivingListener,
-                        this.brokerConfig);
+                this.messageStore = new DefaultMessageStore(this.messageStoreConfig, this.brokerStatsManager, this.messageArrivingListener, this.brokerConfig);
+                /**
+                 * 是否开启raft协议存储消息
+                 */
                 if (messageStoreConfig.isEnableDLegerCommitLog()) {
                     DLedgerRoleChangeHandler roleChangeHandler = new DLedgerRoleChangeHandler(this, (DefaultMessageStore) messageStore);
                     ((DLedgerCommitLog) ((DefaultMessageStore) messageStore).getCommitLog()).getdLedgerServer().getdLedgerLeaderElector().addRoleChangeHandler(roleChangeHandler);
@@ -310,8 +338,7 @@ public class BrokerController {
                     this.queryThreadPoolQueue,
                     new ThreadFactoryImpl("QueryMessageThread_"));
 
-            this.adminBrokerExecutor =
-                    Executors.newFixedThreadPool(this.brokerConfig.getAdminBrokerThreadPoolNums(), new ThreadFactoryImpl(
+            this.adminBrokerExecutor = Executors.newFixedThreadPool(this.brokerConfig.getAdminBrokerThreadPoolNums(), new ThreadFactoryImpl(
                             "AdminBrokerThread_"));
 
             this.clientManageExecutor = new ThreadPoolExecutor(
@@ -338,9 +365,7 @@ public class BrokerController {
                     this.endTransactionThreadPoolQueue,
                     new ThreadFactoryImpl("EndTransactionThread_"));
 
-            this.consumerManageExecutor =
-                    Executors.newFixedThreadPool(this.brokerConfig.getConsumerManageThreadPoolNums(), new ThreadFactoryImpl(
-                            "ConsumerManageThread_"));
+            this.consumerManageExecutor = Executors.newFixedThreadPool(this.brokerConfig.getConsumerManageThreadPoolNums(), new ThreadFactoryImpl("ConsumerManageThread_"));
 
             this.registerProcessor();
 
