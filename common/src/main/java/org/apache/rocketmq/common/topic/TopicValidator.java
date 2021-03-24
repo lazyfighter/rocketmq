@@ -39,6 +39,9 @@ public class TopicValidator {
 
     public static final String SYSTEM_TOPIC_PREFIX = "rmq_sys_";
 
+    /**
+     * topic 名称校验规则
+     */
     private static final String VALID_PATTERN_STR = "^[%|a-zA-Z0-9_-]+$";
     private static final Pattern PATTERN = Pattern.compile(VALID_PATTERN_STR);
     private static final int TOPIC_MAX_LENGTH = 127;

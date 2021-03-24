@@ -172,6 +172,9 @@ public class TopicConfigManager extends ConfigManager {
 
     /**
      * 在发送消息没有broker没有该topic的时候，创建topic
+     * 1. 上锁
+     * 2. 判断topic是否有无， 有则直接返回topic的配置信息
+     * 3. 如果没有，则获取默认的defaultTopic的配置信息
      *
      * @param topic                       创建topic的名称
      * @param defaultTopic                创建topic的模板名称

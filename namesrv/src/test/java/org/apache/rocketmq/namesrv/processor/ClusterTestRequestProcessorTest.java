@@ -98,11 +98,8 @@ public class ClusterTestRequestProcessorTest {
 
     @Test
     public void testGetRouteInfoByTopic() throws RemotingCommandException {
-        RemotingCommand request = RemotingCommand.createRequestCommand(12, new CommandCustomHeader() {
-            @Override
-            public void checkFields() throws RemotingCommandException {
+        RemotingCommand request = RemotingCommand.createRequestCommand(12, () -> {
 
-            }
         });
         RemotingCommand remoting = clusterTestProcessor.getRouteInfoByTopic(ctx, request);
         assertThat(remoting.getCode()).isEqualTo(ResponseCode.TOPIC_NOT_EXIST);

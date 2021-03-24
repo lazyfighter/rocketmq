@@ -57,6 +57,14 @@ public class BrokerConfig {
     private String msgTraceTopicName = TopicValidator.RMQ_SYS_TRACE_TOPIC;
     @ImportantField
     private boolean traceTopicEnable = false;
+
+    /**
+     * 是否拒绝事务型消息
+     */
+    @ImportantField
+    private boolean rejectTransactionMessage = false;
+    @ImportantField
+    private boolean fetchNamesrvAddrByAddressServer = false;
     /**
      * thread numbers for send message thread pool, since spin lock will be used by default since 4.0.x, the default
      * value is 1.
@@ -80,10 +88,7 @@ public class BrokerConfig {
 
     private int flushConsumerOffsetHistoryInterval = 1000 * 60;
 
-    @ImportantField
-    private boolean rejectTransactionMessage = false;
-    @ImportantField
-    private boolean fetchNamesrvAddrByAddressServer = false;
+
     private int sendThreadPoolQueueCapacity = 10000;
     private int pullThreadPoolQueueCapacity = 100000;
     private int replyThreadPoolQueueCapacity = 10000;
@@ -132,6 +137,9 @@ public class BrokerConfig {
     private long waitTimeMillsInHeartbeatQueue = 31 * 1000;
     private long waitTimeMillsInTransactionQueue = 3 * 1000;
 
+    /**
+     * broker 开始接收新消息时间， 只有当前时间大于该时间 ， broker才会处理请求
+     */
     private long startAcceptSendRequestTimeStamp = 0L;
 
     private boolean traceOn = true;
