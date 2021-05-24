@@ -46,12 +46,34 @@ public class RouteInfoManager {
      * broker 上报超时时间
      */
     private final static long BROKER_CHANNEL_EXPIRED_TIME = 1000 * 60 * 2;
+
+    /**
+     * topic 以及对应的队列
+     */
+    private final HashMap<String, List<QueueData>> topicQueueTable;
+
+    /**
+     * broker信息
+     */
+    private final HashMap<String, BrokerData> brokerAddrTable;
+
+    /**
+     * 集群信息key为集群名称， value为集群包含的broker
+     */
+    private final HashMap<String, Set<String>> clusterAddrTable;
+
+    /**
+     * broker上报的存活信息 ， key为brokerName， value为broker最后上报的信息
+     */
+    private final HashMap<String, BrokerLiveInfo> brokerLiveTable;
+
+    /**
+     * broker 对应的过滤服务器的信息
+     */
+    private final HashMap<String, List<String>> filterServerTable;
+
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
-    private final HashMap<String/* topic */, List<QueueData>> topicQueueTable;
-    private final HashMap<String/* brokerName */, BrokerData> brokerAddrTable;
-    private final HashMap<String/* clusterName */, Set<String/* brokerName */>> clusterAddrTable;
-    private final HashMap<String/* brokerAddr */, BrokerLiveInfo> brokerLiveTable;
-    private final HashMap<String/* brokerAddr */, List<String>/* Filter Server */> filterServerTable;
+
 
     public RouteInfoManager() {
         this.topicQueueTable = new HashMap<>(1024);
@@ -61,6 +83,10 @@ public class RouteInfoManager {
         this.filterServerTable = new HashMap<>(256);
     }
 
+    /**
+     * 获取集群信息， 集群对应的broker的Name
+     * 以及broker集群信息
+     */
     public byte[] getAllClusterInfo() {
         ClusterInfo clusterInfoSerializeWrapper = new ClusterInfo();
         clusterInfoSerializeWrapper.setBrokerAddrTable(this.brokerAddrTable);
@@ -68,6 +94,9 @@ public class RouteInfoManager {
         return clusterInfoSerializeWrapper.encode();
     }
 
+    /**
+     * 按照名称删除指定的topic
+     */
     public void deleteTopic(final String topic) {
         try {
             try {
@@ -81,6 +110,9 @@ public class RouteInfoManager {
         }
     }
 
+    /**
+     * 获取所有的topic信息
+     */
     public byte[] getAllTopicList() {
         TopicList topicList = new TopicList();
         try {
@@ -97,15 +129,11 @@ public class RouteInfoManager {
         return topicList.encode();
     }
 
-    public RegisterBrokerResult registerBroker(
-            final String clusterName,
-            final String brokerAddr,
-            final String brokerName,
-            final long brokerId,
-            final String haServerAddr,
-            final TopicConfigSerializeWrapper topicConfigWrapper,
-            final List<String> filterServerList,
-            final Channel channel) {
+
+    /**
+     * 注册broker信息， broker包含的topic
+     */
+    public RegisterBrokerResult registerBroker(final String clusterName, final String brokerAddr, final String brokerName, final long brokerId, final String haServerAddr, final TopicConfigSerializeWrapper topicConfigWrapper, final List<String> filterServerList, final Channel channel) {
         RegisterBrokerResult result = new RegisterBrokerResult();
         try {
             try {
@@ -125,23 +153,18 @@ public class RouteInfoManager {
                 Map<Long, String> brokerAddrsMap = brokerData.getBrokerAddrs();
                 //Switch slave to master: first remove <1, IP:PORT> in namesrv, then add <0, IP:PORT>
                 //The same IP:PORT must only have one record in brokerAddrTable
-                Iterator<Entry<Long, String>> it = brokerAddrsMap.entrySet().iterator();
-                while (it.hasNext()) {
-                    Entry<Long, String> item = it.next();
-                    if (null != brokerAddr && brokerAddr.equals(item.getValue()) && brokerId != item.getKey()) {
-                        it.remove();
-                    }
-                }
+                brokerAddrsMap.entrySet()
+                        .removeIf(item -> null != brokerAddr &&
+                                brokerAddr.equals(item.getValue()) &&
+                                brokerId != item.getKey());
 
                 String oldAddr = brokerData.getBrokerAddrs().put(brokerId, brokerAddr);
+
                 registerFirst = registerFirst || (null == oldAddr);
 
-                if (null != topicConfigWrapper
-                        && MixAll.MASTER_ID == brokerId) {
-                    if (this.isBrokerTopicConfigChanged(brokerAddr, topicConfigWrapper.getDataVersion())
-                            || registerFirst) {
-                        ConcurrentMap<String, TopicConfig> tcTable =
-                                topicConfigWrapper.getTopicConfigTable();
+                if (null != topicConfigWrapper && MixAll.MASTER_ID == brokerId) {
+                    if (this.isBrokerTopicConfigChanged(brokerAddr, topicConfigWrapper.getDataVersion()) || registerFirst) {
+                        ConcurrentMap<String, TopicConfig> tcTable = topicConfigWrapper.getTopicConfigTable();
                         if (tcTable != null) {
                             for (Map.Entry<String, TopicConfig> entry : tcTable.entrySet()) {
                                 this.createAndUpdateQueueData(brokerName, entry.getValue());
@@ -218,7 +241,7 @@ public class RouteInfoManager {
 
         List<QueueData> queueDataList = this.topicQueueTable.get(topicConfig.getTopicName());
         if (null == queueDataList) {
-            queueDataList = new LinkedList<QueueData>();
+            queueDataList = new LinkedList<>();
             queueDataList.add(queueData);
             this.topicQueueTable.put(topicConfig.getTopicName(), queueDataList);
             log.info("new topic registered, {} {}", topicConfig.getTopicName(), queueData);
@@ -232,8 +255,7 @@ public class RouteInfoManager {
                     if (qd.equals(queueData)) {
                         addNewOne = false;
                     } else {
-                        log.info("topic changed, {} OLD: {} NEW: {}", topicConfig.getTopicName(), qd,
-                                queueData);
+                        log.info("topic changed, {} OLD: {} NEW: {}", topicConfig.getTopicName(), qd, queueData);
                         it.remove();
                     }
                 }
