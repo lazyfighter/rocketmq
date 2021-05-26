@@ -251,8 +251,7 @@ public class DefaultRequestProcessor extends AsyncNettyRequestProcessor implemen
         return true;
     }
 
-    public RemotingCommand queryBrokerTopicConfig(ChannelHandlerContext ctx,
-        RemotingCommand request) throws RemotingCommandException {
+    public RemotingCommand queryBrokerTopicConfig(ChannelHandlerContext ctx, RemotingCommand request) throws RemotingCommandException {
         final RemotingCommand response = RemotingCommand.createResponseCommand(QueryDataVersionResponseHeader.class);
         final QueryDataVersionResponseHeader responseHeader = (QueryDataVersionResponseHeader) response.readCustomHeader();
         final QueryDataVersionRequestHeader requestHeader =
@@ -375,8 +374,10 @@ public class DefaultRequestProcessor extends AsyncNettyRequestProcessor implemen
         return response;
     }
 
-    private RemotingCommand wipeWritePermOfBroker(ChannelHandlerContext ctx,
-        RemotingCommand request) throws RemotingCommandException {
+    /**
+     * 禁止某个broker上面的写操作
+     */
+    private RemotingCommand wipeWritePermOfBroker(ChannelHandlerContext ctx, RemotingCommand request) throws RemotingCommandException {
         final RemotingCommand response = RemotingCommand.createResponseCommand(WipeWritePermOfBrokerResponseHeader.class);
         final WipeWritePermOfBrokerResponseHeader responseHeader = (WipeWritePermOfBrokerResponseHeader) response.readCustomHeader();
         final WipeWritePermOfBrokerRequestHeader requestHeader =

@@ -147,11 +147,7 @@ public class RemotingCommand {
 
     /**
      * 将二进制数据流解析成为具体的command
-     * <p>
      * header + body
-     *
-     * @param byteBuffer
-     * @return
      */
     public static RemotingCommand decode(final ByteBuffer byteBuffer) {
         int length = byteBuffer.limit();

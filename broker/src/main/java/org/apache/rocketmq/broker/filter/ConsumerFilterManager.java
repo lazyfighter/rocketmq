@@ -73,9 +73,7 @@ public class ConsumerFilterManager extends ConfigManager {
      *
      * @return maybe null
      */
-    public static ConsumerFilterData build(final String topic, final String consumerGroup,
-        final String expression, final String type,
-        final long clientVersion) {
+    public static ConsumerFilterData build(final String topic, final String consumerGroup, final String expression, final String type, final long clientVersion) {
         if (ExpressionType.isTagType(type)) {
             return null;
         }
@@ -133,8 +131,7 @@ public class ConsumerFilterManager extends ConfigManager {
         }
     }
 
-    public boolean register(final String topic, final String consumerGroup, final String expression,
-        final String type, final long clientVersion) {
+    public boolean register(final String topic, final String consumerGroup, final String expression, final String type, final long clientVersion) {
         if (ExpressionType.isTagType(type)) {
             return false;
         }
@@ -321,8 +318,7 @@ public class ConsumerFilterManager extends ConfigManager {
 
     public static class FilterDataMapByTopic {
 
-        private ConcurrentMap<String/*consumer group*/, ConsumerFilterData>
-            groupFilterData = new ConcurrentHashMap<String, ConsumerFilterData>();
+        private ConcurrentMap<String/*consumer group*/, ConsumerFilterData> groupFilterData = new ConcurrentHashMap<String, ConsumerFilterData>();
 
         private String topic;
 
@@ -351,8 +347,7 @@ public class ConsumerFilterManager extends ConfigManager {
             data.setDeadTime(now);
         }
 
-        public boolean register(String consumerGroup, String expression, String type, BloomFilterData bloomFilterData,
-            long clientVersion) {
+        public boolean register(String consumerGroup, String expression, String type, BloomFilterData bloomFilterData, long clientVersion) {
             ConsumerFilterData old = this.groupFilterData.get(consumerGroup);
 
             if (old == null) {

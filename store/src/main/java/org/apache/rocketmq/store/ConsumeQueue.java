@@ -44,12 +44,7 @@ public class ConsumeQueue {
     private volatile long minLogicOffset = 0;
     private ConsumeQueueExt consumeQueueExt = null;
 
-    public ConsumeQueue(
-        final String topic,
-        final int queueId,
-        final String storePath,
-        final int mappedFileSize,
-        final DefaultMessageStore defaultMessageStore) {
+    public ConsumeQueue(final String topic, final int queueId, final String storePath, final int mappedFileSize, final DefaultMessageStore defaultMessageStore) {
         this.storePath = storePath;
         this.mappedFileSize = mappedFileSize;
         this.defaultMessageStore = defaultMessageStore;

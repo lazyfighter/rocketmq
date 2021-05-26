@@ -79,8 +79,7 @@ public class PullMessageProcessor extends AsyncNettyRequestProcessor implements 
     }
 
     @Override
-    public RemotingCommand processRequest(final ChannelHandlerContext ctx,
-        RemotingCommand request) throws RemotingCommandException {
+    public RemotingCommand processRequest(final ChannelHandlerContext ctx, RemotingCommand request) throws RemotingCommandException {
         return this.processRequest(ctx.channel(), request, true);
     }
 

@@ -30,6 +30,10 @@ import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+
+/**
+ * 存储每个消费组的消费偏移量
+ */
 public class ConsumerOffsetManager extends ConfigManager {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
     private static final String TOPIC_GROUP_SEPARATOR = "@";
@@ -130,7 +134,7 @@ public class ConsumerOffsetManager extends ConfigManager {
     private void commitOffset(final String clientHost, final String key, final int queueId, final long offset) {
         ConcurrentMap<Integer, Long> map = this.offsetTable.get(key);
         if (null == map) {
-            map = new ConcurrentHashMap<Integer, Long>(32);
+            map = new ConcurrentHashMap<>(32);
             map.put(queueId, offset);
             this.offsetTable.put(key, map);
         } else {

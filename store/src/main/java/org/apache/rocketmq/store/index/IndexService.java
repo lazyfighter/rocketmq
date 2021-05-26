@@ -40,9 +40,21 @@ public class IndexService {
      */
     private static final int MAX_TRY_IDX_CREATE = 3;
     private final DefaultMessageStore defaultMessageStore;
+    /**
+     * hash槽
+     */
     private final int hashSlotNum;
+    /**
+     * 最大索引消息数量
+     */
     private final int indexNum;
+    /**
+     * 消息索引存储路径
+     */
     private final String storePath;
+    /**
+     * 所有索引文件
+     */
     private final ArrayList<IndexFile> indexFileList = new ArrayList<IndexFile>();
     private final ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
 
@@ -50,8 +62,7 @@ public class IndexService {
         this.defaultMessageStore = store;
         this.hashSlotNum = store.getMessageStoreConfig().getMaxHashSlotNum();
         this.indexNum = store.getMessageStoreConfig().getMaxIndexNum();
-        this.storePath =
-            StorePathConfigHelper.getStorePathIndex(store.getMessageStoreConfig().getStorePathRootDir());
+        this.storePath = StorePathConfigHelper.getStorePathIndex(store.getMessageStoreConfig().getStorePathRootDir());
     }
 
     public boolean load(final boolean lastExitOK) {

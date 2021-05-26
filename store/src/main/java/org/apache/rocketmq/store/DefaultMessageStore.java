@@ -56,6 +56,9 @@ public class DefaultMessageStore implements MessageStore {
     // CommitLog
     private final CommitLog commitLog;
 
+    /**
+     * 所有topic对应的队列
+     */
     private final ConcurrentMap<String/* topic */, ConcurrentMap<Integer/* queueId */, ConsumeQueue>> consumeQueueTable;
 
     private final FlushConsumeQueueService flushConsumeQueueService;
@@ -121,7 +124,9 @@ public class DefaultMessageStore implements MessageStore {
         this.messageStoreConfig = messageStoreConfig;
         this.brokerStatsManager = brokerStatsManager;
 
-
+        /**
+         * 分配MappedFile服务
+         */
         this.allocateMappedFileService = new AllocateMappedFileService(this);
 
         if (messageStoreConfig.isEnableDLegerCommitLog()) {
@@ -137,11 +142,16 @@ public class DefaultMessageStore implements MessageStore {
         this.cleanConsumeQueueService = new CleanConsumeQueueService();
         this.storeStatsService = new StoreStatsService();
         this.indexService = new IndexService(this);
+
         if (!messageStoreConfig.isEnableDLegerCommitLog()) {
             this.haService = new HAService(this);
         } else {
             this.haService = null;
         }
+
+        /**
+         * TODO fixme
+         */
         this.reputMessageService = new ReputMessageService();
 
         this.scheduleMessageService = new ScheduleMessageService(this);
@@ -161,7 +171,9 @@ public class DefaultMessageStore implements MessageStore {
         this.dispatcherList.addLast(new CommitLogDispatcherBuildIndex());
 
         File file = new File(StorePathConfigHelper.getLockFile(messageStoreConfig.getStorePathRootDir()));
+
         MappedFile.ensureDirOK(file.getParent());
+
         lockFile = new RandomAccessFile(file, "rw");
     }
 
@@ -1962,8 +1974,7 @@ public class DefaultMessageStore implements MessageStore {
                                 if (size > 0) {
                                     DefaultMessageStore.this.doDispatch(dispatchRequest);
 
-                                    if (BrokerRole.SLAVE != DefaultMessageStore.this.getMessageStoreConfig().getBrokerRole()
-                                            && DefaultMessageStore.this.brokerConfig.isLongPollingEnable()) {
+                                    if (BrokerRole.SLAVE != DefaultMessageStore.this.getMessageStoreConfig().getBrokerRole() && DefaultMessageStore.this.brokerConfig.isLongPollingEnable()) {
                                         DefaultMessageStore.this.messageArrivingListener.arriving(dispatchRequest.getTopic(),
                                                 dispatchRequest.getQueueId(), dispatchRequest.getConsumeQueueOffset() + 1,
                                                 dispatchRequest.getTagsCode(), dispatchRequest.getStoreTimestamp(),

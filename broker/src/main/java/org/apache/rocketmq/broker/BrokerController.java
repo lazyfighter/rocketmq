@@ -137,12 +137,12 @@ public class BrokerController {
     private final MessageArrivingListener messageArrivingListener;
 
     /**
-     *
+     * broker对客户端通信
      */
     private final Broker2Client broker2Client;
 
     /**
-     *
+     * 保存所有的订阅组的信息
      */
     private final SubscriptionGroupManager subscriptionGroupManager;
 
@@ -227,7 +227,6 @@ public class BrokerController {
     private Map<Class, AccessValidator> accessValidatorMap = new HashMap<>();
 
 
-
     public BrokerController(final BrokerConfig brokerConfig, final NettyServerConfig nettyServerConfig, final NettyClientConfig nettyClientConfig, final MessageStoreConfig messageStoreConfig) {
         this.brokerConfig = brokerConfig;
         this.nettyServerConfig = nettyServerConfig;
@@ -235,21 +234,82 @@ public class BrokerController {
         this.messageStoreConfig = messageStoreConfig;
 
 
+        /**
+         * 负责管理每个消费组对订阅的队列的消费的偏移量
+         */
         this.consumerOffsetManager = new ConsumerOffsetManager(this);
+
+        /**
+         * 负责管理broker上面所有的topic信息
+         */
         this.topicConfigManager = new TopicConfigManager(this);
+
+        /**
+         * 负责处理客户端拉取消息请求
+         */
         this.pullMessageProcessor = new PullMessageProcessor(this);
+
+        /**
+         * 负责保存所有的拉取消息的请求用来使用long-pulling
+         */
         this.pullRequestHoldService = new PullRequestHoldService(this);
+
+        /**
+         * 消息监听器， 当消费者进行lang-pulling的时候， 服务端接收到新的消息， 会通知所有的消费者
+         */
         this.messageArrivingListener = new NotifyMessageArrivingListener(this.pullRequestHoldService);
+
+        /**
+         * 通知消费者consumerId修改器
+         *
+         * TODO : fixme
+         */
         this.consumerIdsChangeListener = new DefaultConsumerIdsChangeListener(this);
+
+        /**
+         * 管理broker对应的所有消费组信息
+         */
         this.consumerManager = new ConsumerManager(this.consumerIdsChangeListener);
+
+        /**
+         * 消费者过滤器
+         */
         this.consumerFilterManager = new ConsumerFilterManager(this);
+
+        /**
+         * 管理所有的生产者
+         */
         this.producerManager = new ProducerManager();
+
+        /**
+         * 负责消费者  生产者  以及过滤服务器的链接通道的扫描，销毁过期的通道
+         */
         this.clientHousekeepingService = new ClientHousekeepingService(this);
+
+        /**
+         * broker 与 client进行通信的客户端
+         */
         this.broker2Client = new Broker2Client(this);
+
+        /**
+         * 负责管理所有的订阅者信息
+         */
         this.subscriptionGroupManager = new SubscriptionGroupManager(this);
+
+        /**
+         * broker 与nameServer通信的客户端
+         */
         this.brokerOuterAPI = new BrokerOuterAPI(nettyClientConfig);
+
+        /**
+         * 过滤服务器管理
+         */
         this.filterServerManager = new FilterServerManager(this);
 
+
+        /**
+         * broker 主从同步器
+         */
         this.slaveSynchronize = new SlaveSynchronize(this);
 
         this.sendThreadPoolQueue = new LinkedBlockingQueue<>(this.brokerConfig.getSendThreadPoolQueueCapacity());

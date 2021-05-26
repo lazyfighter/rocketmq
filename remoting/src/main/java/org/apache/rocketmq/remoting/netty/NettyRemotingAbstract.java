@@ -74,7 +74,7 @@ public abstract class NettyRemotingAbstract {
      * This container holds all processors per request code, aka, for each incoming request, we may look up the
      * responding processor in this map to handle the request.
      */
-    protected final HashMap<Integer/* request code */, Pair<NettyRequestProcessor, ExecutorService>> processorTable = new HashMap<Integer, Pair<NettyRequestProcessor, ExecutorService>>(64);
+    protected final HashMap<Integer/* request code */, Pair<NettyRequestProcessor, ExecutorService>> processorTable = new HashMap<>(64);
 
     /**
      * netty的链接事件处理器， 最终会提交给ChannelEventListener来进行真正的处理
@@ -555,8 +555,6 @@ public abstract class NettyRemotingAbstract {
 
     /**
      * 快速失败，当与远程服务器链接通道断开的时候，遍历正在等待结果的请求，如果属于该通道则直接失败
-     *
-     * @param channel the channel which is close already
      */
     protected void failFast(final Channel channel) {
         Iterator<Entry<Integer, ResponseFuture>> it = responseTable.entrySet().iterator();
@@ -608,7 +606,7 @@ public abstract class NettyRemotingAbstract {
      * netty的链接时间处理器
      */
     class NettyEventExecutor extends ServiceThread {
-        private final LinkedBlockingQueue<NettyEvent> eventQueue = new LinkedBlockingQueue<NettyEvent>();
+        private final LinkedBlockingQueue<NettyEvent> eventQueue = new LinkedBlockingQueue<>();
         private final int maxSize = 10000;
 
         public void putNettyEvent(final NettyEvent event) {

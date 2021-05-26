@@ -52,15 +52,18 @@ public class ScheduleMessageService extends ConfigManager {
     private static final long DELAY_FOR_A_WHILE = 100L;
     private static final long DELAY_FOR_A_PERIOD = 10000L;
 
-    private final ConcurrentMap<Integer /* level */, Long/* delay timeMillis */> delayLevelTable =
-        new ConcurrentHashMap<Integer, Long>(32);
+    private final ConcurrentMap<Integer /* level */, Long/* delay timeMillis */> delayLevelTable = new ConcurrentHashMap<Integer, Long>(32);
 
-    private final ConcurrentMap<Integer /* level */, Long/* offset */> offsetTable =
-        new ConcurrentHashMap<Integer, Long>(32);
+    private final ConcurrentMap<Integer /* level */, Long/* offset */> offsetTable = new ConcurrentHashMap<Integer, Long>(32);
+
     private final DefaultMessageStore defaultMessageStore;
+
     private final AtomicBoolean started = new AtomicBoolean(false);
+
     private Timer timer;
+
     private MessageStore writeMessageStore;
+
     private int maxDelayLevel;
 
     public ScheduleMessageService(final DefaultMessageStore defaultMessageStore) {
@@ -260,9 +263,7 @@ public class ScheduleMessageService extends ConfigManager {
         }
 
         public void executeOnTimeup() {
-            ConsumeQueue cq =
-                ScheduleMessageService.this.defaultMessageStore.findConsumeQueue(TopicValidator.RMQ_SYS_SCHEDULE_TOPIC,
-                    delayLevel2QueueId(delayLevel));
+            ConsumeQueue cq = ScheduleMessageService.this.defaultMessageStore.findConsumeQueue(TopicValidator.RMQ_SYS_SCHEDULE_TOPIC, delayLevel2QueueId(delayLevel));
 
             long failScheduleOffset = offset;
 
@@ -283,8 +284,7 @@ public class ScheduleMessageService extends ConfigManager {
                                     tagsCode = cqExtUnit.getTagsCode();
                                 } else {
                                     //can't find ext content.So re compute tags code.
-                                    log.error("[BUG] can't find consume queue extend file content!addr={}, offsetPy={}, sizePy={}",
-                                        tagsCode, offsetPy, sizePy);
+                                    log.error("[BUG] can't find consume queue extend file content!addr={}, offsetPy={}, sizePy={}", tagsCode, offsetPy, sizePy);
                                     long msgStoreTime = defaultMessageStore.getCommitLog().pickupStoreTimestamp(offsetPy, sizePy);
                                     tagsCode = computeDeliverTimestamp(delayLevel, msgStoreTime);
                                 }
@@ -298,9 +298,7 @@ public class ScheduleMessageService extends ConfigManager {
                             long countdown = deliverTimestamp - now;
 
                             if (countdown <= 0) {
-                                MessageExt msgExt =
-                                    ScheduleMessageService.this.defaultMessageStore.lookMessageByOffset(
-                                        offsetPy, sizePy);
+                                MessageExt msgExt = ScheduleMessageService.this.defaultMessageStore.lookMessageByOffset(offsetPy, sizePy);
 
                                 if (msgExt != null) {
                                     try {
@@ -310,9 +308,7 @@ public class ScheduleMessageService extends ConfigManager {
                                                     msgInner.getTopic(), msgInner);
                                             continue;
                                         }
-                                        PutMessageResult putMessageResult =
-                                            ScheduleMessageService.this.writeMessageStore
-                                                .putMessage(msgInner);
+                                        PutMessageResult putMessageResult = ScheduleMessageService.this.writeMessageStore.putMessage(msgInner);
 
                                         if (putMessageResult != null
                                             && putMessageResult.getPutMessageStatus() == PutMessageStatus.PUT_OK) {
@@ -343,17 +339,14 @@ public class ScheduleMessageService extends ConfigManager {
                                     }
                                 }
                             } else {
-                                ScheduleMessageService.this.timer.schedule(
-                                    new DeliverDelayedMessageTimerTask(this.delayLevel, nextOffset),
-                                    countdown);
+                                ScheduleMessageService.this.timer.schedule(new DeliverDelayedMessageTimerTask(this.delayLevel, nextOffset), countdown);
                                 ScheduleMessageService.this.updateOffset(this.delayLevel, nextOffset);
                                 return;
                             }
                         } // end of for
 
                         nextOffset = offset + (i / ConsumeQueue.CQ_STORE_UNIT_SIZE);
-                        ScheduleMessageService.this.timer.schedule(new DeliverDelayedMessageTimerTask(
-                            this.delayLevel, nextOffset), DELAY_FOR_A_WHILE);
+                        ScheduleMessageService.this.timer.schedule(new DeliverDelayedMessageTimerTask(this.delayLevel, nextOffset), DELAY_FOR_A_WHILE);
                         ScheduleMessageService.this.updateOffset(this.delayLevel, nextOffset);
                         return;
                     } finally {
@@ -372,8 +365,7 @@ public class ScheduleMessageService extends ConfigManager {
                 }
             } // end of if (cq != null)
 
-            ScheduleMessageService.this.timer.schedule(new DeliverDelayedMessageTimerTask(this.delayLevel,
-                failScheduleOffset), DELAY_FOR_A_WHILE);
+            ScheduleMessageService.this.timer.schedule(new DeliverDelayedMessageTimerTask(this.delayLevel, failScheduleOffset), DELAY_FOR_A_WHILE);
         }
 
         private MessageExtBrokerInner messageTimeup(MessageExt msgExt) {

@@ -36,8 +36,7 @@ import org.apache.rocketmq.remoting.common.RemotingUtil;
 public class ConsumerManager {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
     private static final long CHANNEL_EXPIRED_TIMEOUT = 1000 * 120;
-    private final ConcurrentMap<String/* Group */, ConsumerGroupInfo> consumerTable =
-        new ConcurrentHashMap<String, ConsumerGroupInfo>(1024);
+    private final ConcurrentMap<String/* Group */, ConsumerGroupInfo> consumerTable = new ConcurrentHashMap<String, ConsumerGroupInfo>(1024);
     private final ConsumerIdsChangeListener consumerIdsChangeListener;
 
     public ConsumerManager(final ConsumerIdsChangeListener consumerIdsChangeListener) {
@@ -95,9 +94,7 @@ public class ConsumerManager {
         }
     }
 
-    public boolean registerConsumer(final String group, final ClientChannelInfo clientChannelInfo,
-        ConsumeType consumeType, MessageModel messageModel, ConsumeFromWhere consumeFromWhere,
-        final Set<SubscriptionData> subList, boolean isNotifyConsumerIdsChangedEnable) {
+    public boolean registerConsumer(final String group, final ClientChannelInfo clientChannelInfo, ConsumeType consumeType, MessageModel messageModel, ConsumeFromWhere consumeFromWhere, final Set<SubscriptionData> subList, boolean isNotifyConsumerIdsChangedEnable) {
 
         ConsumerGroupInfo consumerGroupInfo = this.consumerTable.get(group);
         if (null == consumerGroupInfo) {
@@ -106,9 +103,7 @@ public class ConsumerManager {
             consumerGroupInfo = prev != null ? prev : tmp;
         }
 
-        boolean r1 =
-            consumerGroupInfo.updateChannel(clientChannelInfo, consumeType, messageModel,
-                consumeFromWhere);
+        boolean r1 = consumerGroupInfo.updateChannel(clientChannelInfo, consumeType, messageModel, consumeFromWhere);
         boolean r2 = consumerGroupInfo.updateSubscription(subList);
 
         if (r1 || r2) {
