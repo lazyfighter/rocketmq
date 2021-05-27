@@ -180,7 +180,8 @@ public abstract class AbstractSendMessageProcessor extends AsyncNettyRequestProc
      * @return
      */
     protected RemotingCommand msgCheck(final ChannelHandlerContext ctx, final SendMessageRequestHeader requestHeader, final RemotingCommand response) {
-        if (!PermName.isWriteable(this.brokerController.getBrokerConfig().getBrokerPermission()) && this.brokerController.getTopicConfigManager().isOrderTopic(requestHeader.getTopic())) {
+        if (!PermName.isWriteable(this.brokerController.getBrokerConfig().getBrokerPermission()) &&
+                this.brokerController.getTopicConfigManager().isOrderTopic(requestHeader.getTopic())) {
             response.setCode(ResponseCode.NO_PERMISSION);
             response.setRemark("the broker[" + this.brokerController.getBrokerConfig().getBrokerIP1() + "] sending message is forbidden");
             return response;
@@ -209,7 +210,8 @@ public abstract class AbstractSendMessageProcessor extends AsyncNettyRequestProc
                     requestHeader.getTopic(),
                     requestHeader.getDefaultTopic(),
                     RemotingHelper.parseChannelRemoteAddr(ctx.channel()),
-                    requestHeader.getDefaultTopicQueueNums(), topicSysFlag);
+                    requestHeader.getDefaultTopicQueueNums(),
+                    topicSysFlag);
 
             if (null == topicConfig) {
                 if (requestHeader.getTopic().startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
