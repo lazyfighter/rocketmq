@@ -42,6 +42,11 @@ public interface MQConsumerInner {
 
     void persistConsumerOffset();
 
+    /**
+     * 更新订阅信息，
+     * @param topic 主题
+     * @param info 所有的可读消息队列
+     */
     void updateTopicSubscribeInfo(final String topic, final Set<MessageQueue> info);
 
     boolean isSubscribeTopicNeedUpdate(final String topic);

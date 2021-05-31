@@ -25,25 +25,12 @@ import org.apache.rocketmq.common.message.MessageQueue;
 public interface AllocateMessageQueueStrategy {
 
     /**
-     * Allocating by consumer id
-     *
-     * @param consumerGroup current consumer group
-     * @param currentCID current consumer id
-     * @param mqAll message queue set in current topic
-     * @param cidAll consumer set in current consumer group
-     * @return The allocate result of given strategy
+     * 分配方法
      */
-    List<MessageQueue> allocate(
-        final String consumerGroup,
-        final String currentCID,
-        final List<MessageQueue> mqAll,
-        final List<String> cidAll
-    );
+    List<MessageQueue> allocate(final String consumerGroup, final String currentCID, final List<MessageQueue> mqAll, final List<String> cidAll);
 
     /**
-     * Algorithm name
-     *
-     * @return The strategy name
+     * 分配算法名称
      */
     String getName();
 }
