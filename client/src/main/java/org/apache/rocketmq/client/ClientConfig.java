@@ -42,17 +42,22 @@ public class ClientConfig {
     protected AccessChannel accessChannel = AccessChannel.LOCAL;
 
     /**
-     * Pulling topic information interval from the named server
+     * 从nameServer拉取topic配置间隔
      */
     private int pollNameServerInterval = 1000 * 30;
     /**
-     * Heartbeat interval in microseconds with message broker
+     * 与broker心跳间隔
      */
     private int heartbeatBrokerInterval = 1000 * 30;
     /**
-     * Offset persistent interval for consumer
+     * 消费者offset持久化间隔
      */
     private int persistConsumerOffsetInterval = 1000 * 5;
+
+
+    /**
+     * 拉取消息失败的时候，重试拉取时间间隔
+     */
     private long pullTimeDelayMillsWhenException = 1000;
     private boolean unitMode = false;
     private String unitName;
@@ -62,6 +67,10 @@ public class ClientConfig {
 
     private LanguageCode language = LanguageCode.JAVA;
 
+
+    /**
+     * 默认为 IP@DEFAULT
+     */
     public String buildMQClientId() {
         StringBuilder sb = new StringBuilder();
         sb.append(this.getClientIP());

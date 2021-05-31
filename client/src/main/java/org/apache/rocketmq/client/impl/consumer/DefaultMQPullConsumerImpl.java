@@ -624,6 +624,7 @@ public class DefaultMQPullConsumerImpl implements MQConsumerInner {
     public synchronized void start() throws MQClientException {
         switch (this.serviceState) {
             case CREATE_JUST:
+                log.info("the consumer [{}] start beginning. messageModel={}, isUnitMode={}", this.defaultMQPullConsumer.getConsumerGroup(), this.defaultMQPullConsumer.getMessageModel(), this.defaultMQPullConsumer.isUnitMode());
                 this.serviceState = ServiceState.START_FAILED;
 
                 this.checkConfig();

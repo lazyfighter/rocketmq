@@ -16,16 +16,17 @@
  */
 package org.apache.rocketmq.broker.client.rebalance;
 
+import org.apache.rocketmq.common.constant.LoggerName;
+import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.logging.InternalLogger;
+import org.apache.rocketmq.logging.InternalLoggerFactory;
+
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import org.apache.rocketmq.common.constant.LoggerName;
-import org.apache.rocketmq.logging.InternalLogger;
-import org.apache.rocketmq.logging.InternalLoggerFactory;
-import org.apache.rocketmq.common.message.MessageQueue;
 
 public class RebalanceLockManager {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.REBALANCE_LOCK_LOGGER_NAME);
@@ -51,9 +52,9 @@ public class RebalanceLockManager {
                         lockEntry.setClientId(clientId);
                         groupValue.put(mq, lockEntry);
                         log.info("tryLock, message queue not locked, I got it. Group: {} NewClientId: {} {}",
-                            group,
-                            clientId,
-                            mq);
+                                group,
+                                clientId,
+                                mq);
                     }
 
                     if (lockEntry.isLocked(clientId)) {
@@ -67,20 +68,20 @@ public class RebalanceLockManager {
                         lockEntry.setClientId(clientId);
                         lockEntry.setLastUpdateTimestamp(System.currentTimeMillis());
                         log.warn(
-                            "tryLock, message queue lock expired, I got it. Group: {} OldClientId: {} NewClientId: {} {}",
-                            group,
-                            oldClientId,
-                            clientId,
-                            mq);
+                                "tryLock, message queue lock expired, I got it. Group: {} OldClientId: {} NewClientId: {} {}",
+                                group,
+                                oldClientId,
+                                clientId,
+                                mq);
                         return true;
                     }
 
                     log.warn(
-                        "tryLock, message queue locked by other client. Group: {} OtherClientId: {} NewClientId: {} {}",
-                        group,
-                        oldClientId,
-                        clientId,
-                        mq);
+                            "tryLock, message queue locked by other client. Group: {} OtherClientId: {} NewClientId: {} {}",
+                            group,
+                            oldClientId,
+                            clientId,
+                            mq);
                     return false;
                 } finally {
                     this.lock.unlock();
@@ -95,6 +96,9 @@ public class RebalanceLockManager {
         return true;
     }
 
+    /**
+     * 判断指定的group 是否锁住了messageQueue
+     */
     private boolean isLocked(final String group, final MessageQueue mq, final String clientId) {
         ConcurrentHashMap<MessageQueue, LockEntry> groupValue = this.mqLockTable.get(group);
         if (groupValue != null) {
@@ -112,10 +116,12 @@ public class RebalanceLockManager {
         return false;
     }
 
-    public Set<MessageQueue> tryLockBatch(final String group, final Set<MessageQueue> mqs,
-        final String clientId) {
-        Set<MessageQueue> lockedMqs = new HashSet<MessageQueue>(mqs.size());
-        Set<MessageQueue> notLockedMqs = new HashSet<MessageQueue>(mqs.size());
+    /**
+     * 对指定的MessageQueues进行批量锁定
+     */
+    public Set<MessageQueue> tryLockBatch(final String group, final Set<MessageQueue> mqs, final String clientId) {
+        Set<MessageQueue> lockedMqs = new HashSet<>(mqs.size());
+        Set<MessageQueue> notLockedMqs = new HashSet<>(mqs.size());
 
         for (MessageQueue mq : mqs) {
             if (this.isLocked(group, mq, clientId)) {
@@ -142,10 +148,10 @@ public class RebalanceLockManager {
                             lockEntry.setClientId(clientId);
                             groupValue.put(mq, lockEntry);
                             log.info(
-                                "tryLockBatch, message queue not locked, I got it. Group: {} NewClientId: {} {}",
-                                group,
-                                clientId,
-                                mq);
+                                    "tryLockBatch, message queue not locked, I got it. Group: {} NewClientId: {} {}",
+                                    group,
+                                    clientId,
+                                    mq);
                         }
 
                         if (lockEntry.isLocked(clientId)) {
@@ -160,21 +166,21 @@ public class RebalanceLockManager {
                             lockEntry.setClientId(clientId);
                             lockEntry.setLastUpdateTimestamp(System.currentTimeMillis());
                             log.warn(
-                                "tryLockBatch, message queue lock expired, I got it. Group: {} OldClientId: {} NewClientId: {} {}",
-                                group,
-                                oldClientId,
-                                clientId,
-                                mq);
+                                    "tryLockBatch, message queue lock expired, I got it. Group: {} OldClientId: {} NewClientId: {} {}",
+                                    group,
+                                    oldClientId,
+                                    clientId,
+                                    mq);
                             lockedMqs.add(mq);
                             continue;
                         }
 
                         log.warn(
-                            "tryLockBatch, message queue locked by other client. Group: {} OtherClientId: {} NewClientId: {} {}",
-                            group,
-                            oldClientId,
-                            clientId,
-                            mq);
+                                "tryLockBatch, message queue locked by other client. Group: {} OtherClientId: {} NewClientId: {} {}",
+                                group,
+                                oldClientId,
+                                clientId,
+                                mq);
                     }
                 } finally {
                     this.lock.unlock();
@@ -187,6 +193,9 @@ public class RebalanceLockManager {
         return lockedMqs;
     }
 
+    /**
+     * 对指定的MessageQueues进行批量解锁
+     */
     public void unlockBatch(final String group, final Set<MessageQueue> mqs, final String clientId) {
         try {
             this.lock.lockInterruptibly();
@@ -199,27 +208,27 @@ public class RebalanceLockManager {
                             if (lockEntry.getClientId().equals(clientId)) {
                                 groupValue.remove(mq);
                                 log.info("unlockBatch, Group: {} {} {}",
-                                    group,
-                                    mq,
-                                    clientId);
+                                        group,
+                                        mq,
+                                        clientId);
                             } else {
                                 log.warn("unlockBatch, but mq locked by other client: {}, Group: {} {} {}",
-                                    lockEntry.getClientId(),
-                                    group,
-                                    mq,
-                                    clientId);
+                                        lockEntry.getClientId(),
+                                        group,
+                                        mq,
+                                        clientId);
                             }
                         } else {
                             log.warn("unlockBatch, but mq not locked, Group: {} {} {}",
-                                group,
-                                mq,
-                                clientId);
+                                    group,
+                                    mq,
+                                    clientId);
                         }
                     }
                 } else {
                     log.warn("unlockBatch, group not exist, Group: {} {}",
-                        group,
-                        clientId);
+                            group,
+                            clientId);
                 }
             } finally {
                 this.lock.unlock();
@@ -256,7 +265,7 @@ public class RebalanceLockManager {
 
         public boolean isExpired() {
             boolean expired =
-                (System.currentTimeMillis() - this.lastUpdateTimestamp) > REBALANCE_LOCK_MAX_LIVE_TIME;
+                    (System.currentTimeMillis() - this.lastUpdateTimestamp) > REBALANCE_LOCK_MAX_LIVE_TIME;
 
             return expired;
         }
