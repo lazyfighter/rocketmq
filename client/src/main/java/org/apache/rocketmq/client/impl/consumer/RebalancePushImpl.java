@@ -139,6 +139,10 @@ public class RebalancePushImpl extends RebalanceImpl {
     @Override
     public long computePullFromWhere(MessageQueue mq) {
         long result = -1;
+
+        /**
+         * 默认从最新的消息开始消费
+         */
         final ConsumeFromWhere consumeFromWhere = this.defaultMQPushConsumerImpl.getDefaultMQPushConsumer().getConsumeFromWhere();
         final OffsetStore offsetStore = this.defaultMQPushConsumerImpl.getOffsetStore();
         switch (consumeFromWhere) {

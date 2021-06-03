@@ -322,16 +322,13 @@ public class DefaultLitePullConsumerImpl implements MQConsumerInner {
 
     private void startScheduleTask() {
         scheduledExecutorService.scheduleAtFixedRate(
-            new Runnable() {
-                @Override
-                public void run() {
+                () -> {
                     try {
                         fetchTopicMessageQueuesAndCompare();
                     } catch (Exception e) {
                         log.error("ScheduledTask fetchMessageQueuesAndCompare exception", e);
                     }
-                }
-            }, 1000 * 10, this.getDefaultLitePullConsumer().getTopicMetadataCheckIntervalMillis(), TimeUnit.MILLISECONDS);
+                }, 1000 * 10, this.getDefaultLitePullConsumer().getTopicMetadataCheckIntervalMillis(), TimeUnit.MILLISECONDS);
     }
 
     private void operateAfterRunning() throws MQClientException {

@@ -283,9 +283,12 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
                 }
                 break;
             case CLUSTERING:
-                List<MessageExt> msgBackFailed = new ArrayList<MessageExt>(consumeRequest.getMsgs().size());
+                List<MessageExt> msgBackFailed = new ArrayList<>(consumeRequest.getMsgs().size());
                 for (int i = ackIndex + 1; i < consumeRequest.getMsgs().size(); i++) {
                     MessageExt msg = consumeRequest.getMsgs().get(i);
+                    /**
+                     * 失败的消息  按照失败次数算出延迟等级， 然后发送到延迟队列
+                     */
                     boolean result = this.sendMessageBack(msg, context);
                     if (!result) {
                         msg.setReconsumeTimes(msg.getReconsumeTimes() + 1);
@@ -372,7 +375,7 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
                 consumeMessageContext = new ConsumeMessageContext();
                 consumeMessageContext.setNamespace(defaultMQPushConsumer.getNamespace());
                 consumeMessageContext.setConsumerGroup(defaultMQPushConsumer.getConsumerGroup());
-                consumeMessageContext.setProps(new HashMap<String, String>());
+                consumeMessageContext.setProps(new HashMap<>());
                 consumeMessageContext.setMq(messageQueue);
                 consumeMessageContext.setMsgList(msgs);
                 consumeMessageContext.setSuccess(false);

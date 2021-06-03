@@ -16,19 +16,21 @@
  */
 package org.apache.rocketmq.client.consumer.rebalance;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 import org.apache.rocketmq.client.consumer.AllocateMessageQueueStrategy;
 import org.apache.rocketmq.client.log.ClientLogger;
 import org.apache.rocketmq.common.consistenthash.ConsistentHashRouter;
 import org.apache.rocketmq.common.consistenthash.HashFunction;
 import org.apache.rocketmq.common.consistenthash.Node;
-import org.apache.rocketmq.logging.InternalLogger;
 import org.apache.rocketmq.common.message.MessageQueue;
+import org.apache.rocketmq.logging.InternalLogger;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 /**
- * Consistent Hashing queue algorithm
+ * 一致性hash算法， 将所有的的client放到hash环上， 然后对所有的MessageQueue进行hash 找对对应的节点，
+ * 即分配的client 因为每个client的hash函数是一样的， 所以可以确保每个client不会重复消费messageQueue
  */
 public class AllocateMessageQueueConsistentHash implements AllocateMessageQueueStrategy {
     private final InternalLogger log = ClientLogger.getLog();
@@ -68,9 +70,9 @@ public class AllocateMessageQueueConsistentHash implements AllocateMessageQueueS
         List<MessageQueue> result = new ArrayList<>();
         if (!cidAll.contains(currentCID)) {
             log.info("[BUG] ConsumerGroup: {} The consumerId: {} not in cidAll: {}",
-                consumerGroup,
-                currentCID,
-                cidAll);
+                    consumerGroup,
+                    currentCID,
+                    cidAll);
             return result;
         }
 

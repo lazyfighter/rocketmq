@@ -22,6 +22,9 @@ public class PullRequest {
     private String consumerGroup;
     private MessageQueue messageQueue;
     private ProcessQueue processQueue;
+    /**
+     * 拉取的偏移量
+     */
     private long nextOffset;
     private boolean lockedFirst = false;
 

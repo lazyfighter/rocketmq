@@ -16,7 +16,6 @@
  */
 package org.apache.rocketmq.client.impl.consumer;
 
-import java.util.Set;
 import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.protocol.body.ConsumerRunningInfo;
@@ -24,22 +23,37 @@ import org.apache.rocketmq.common.protocol.heartbeat.ConsumeType;
 import org.apache.rocketmq.common.protocol.heartbeat.MessageModel;
 import org.apache.rocketmq.common.protocol.heartbeat.SubscriptionData;
 
+import java.util.Set;
+
 /**
  * Consumer inner interface
  */
 public interface MQConsumerInner {
     String groupName();
 
+    /**
+     * 消费模式
+     */
     MessageModel messageModel();
 
     ConsumeType consumeType();
 
+    /**
+     * 从什么位置开始消费
+     */
     ConsumeFromWhere consumeFromWhere();
 
+
+    /**
+     * 订阅信息
+     */
     Set<SubscriptionData> subscriptions();
 
     void doRebalance();
 
+    /**
+     * 持久化消费偏移量
+     */
     void persistConsumerOffset();
 
     /**

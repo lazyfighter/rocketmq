@@ -358,6 +358,10 @@ public class MQClientInstance {
             }
         }, 1000, this.clientConfig.getHeartbeatBrokerInterval(), TimeUnit.MILLISECONDS);
 
+
+        /**
+         * 定时任务 ， 每隔10s 进行持久化消费偏移量
+         */
         this.scheduledExecutorService.scheduleAtFixedRate(() -> {
             try {
                 MQClientInstance.this.persistAllConsumerOffset();
@@ -1142,6 +1146,9 @@ public class MQClientInstance {
         return 0;
     }
 
+    /**
+     * 从broker上面获取这个topic group所有的clientId
+     */
     public List<String> findConsumerIdList(final String topic, final String group) {
         String brokerAddr = this.findBrokerAddrByTopic(topic);
         if (null == brokerAddr) {
